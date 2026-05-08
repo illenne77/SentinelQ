@@ -6,6 +6,9 @@ Inputs:
   * future_bars   : pd.DataFrame with daily OHLC indexed by date,
                     starting on day t+1 (the day AFTER trigger).
   * horizon       : int, time-exit deadline in trading days.
+  * stop_px       : optional explicit stop price (overrides STOP_PCT).
+                    Used by ATR-based stops where the per-trade stop
+                    distance is computed externally.
 
 Returns:
   ExitResult: dict with realized return (weighted across legs), exit reason,
@@ -44,15 +47,41 @@ class ExitResult:
     legs: dict             # diagnostic breakdown
 
 
+def compute_atr(daily: pd.DataFrame, lookback: int = 14) -> pd.Series:
+    """Average True Range, simple moving avg over `lookback` days.
+
+    True range = max(high - low, |high - prev_close|, |low - prev_close|).
+    Returned series is aligned to `daily.index`; NaN for early bars where
+    the window is incomplete.
+    """
+    high = daily["high"]
+    low = daily["low"]
+    prev_close = daily["close"].shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    return tr.rolling(lookback, min_periods=lookback).mean()
+
+
 def simulate_exit(entry_close: float, future_bars: pd.DataFrame,
-                  horizon: int = 5) -> ExitResult:
-    """Simulate the §7.5 exit ladder on daily OHLC bars."""
+                  horizon: int = 5, stop_px: float | None = None) -> ExitResult:
+    """Simulate the §7.5 exit ladder on daily OHLC bars.
+
+    If `stop_px` is given, it overrides the percent-based stop (used for
+    ATR-based stops). Otherwise stop_price = entry * (1 + STOP_PCT).
+    """
     if future_bars.empty:
         return ExitResult(0.0, "no_data", -1, {})
 
-    stop_px = entry_close * (1 + STOP_PCT)
+    if stop_px is None:
+        stop_px = entry_close * (1 + STOP_PCT)
     tp1_px = entry_close * (1 + TP1_PCT)
     tp2_px = entry_close * (1 + TP2_PCT)
+
+    # Realized stop pct (for the stop-leg payout) — use actual stop_px / entry
+    stop_realized_pct = (stop_px / entry_close) - 1.0
 
     pos_tp1 = TP1_SHARE       # 50% leg, stops out via main stop OR fires at tp1
     pos_tp2 = TP2_SHARE       # 30% leg, stops out via main stop OR fires at tp2
@@ -81,7 +110,7 @@ def simulate_exit(entry_close: float, future_bars: pd.DataFrame,
             for leg in ("tp1", "tp2", "trail"):
                 if leg_state[leg] == "open":
                     leg_state[leg] = "stopped"
-                    leg_return[leg] = STOP_PCT
+                    leg_return[leg] = stop_realized_pct
             reasons.append("stop")
             exit_day = i
             break

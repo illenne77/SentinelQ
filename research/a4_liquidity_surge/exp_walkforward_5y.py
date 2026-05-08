@@ -223,7 +223,7 @@ for v_label, kw in VARIANTS:
 prereg = "ATR k=2.5 / +7/+15  <-- prereg primary"
 print()
 print("=" * 110)
-print("  PREREG-0001 PRIMARY VARIANT — VERDICT TABLE")
+print("  PREREG-0001 PRIMARY VARIANT - VERDICT TABLE")
 print("=" * 110)
 print(f"  {'window':<22}  {'split':<6}  {'verdict (per PREREG §4)'}")
 print("  " + "-" * 100)

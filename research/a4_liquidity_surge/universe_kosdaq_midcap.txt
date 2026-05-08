@@ -1,0 +1,66 @@
+# KOSDAQ mid-cap candidate universe for H1 test (broaden universe).
+# Curated list of well-known KOSDAQ mid/large-caps as of 2025-2026.
+# Tickers that fail KIS fetch (delisted, transferred to KOSPI, etc.)
+# are pruned automatically by the loader.
+# Source: pykrx/FDR are broken in 2026; this list is from public knowledge
+# of major KOSDAQ150 components.
+247540
+086520
+196170
+145020
+214150
+086900
+277810
+240810
+058470
+357780
+213420
+095340
+005290
+046890
+263750
+293490
+112040
+095660
+192080
+035760
+053800
+067310
+039030
+067160
+035900
+122870
+041510
+357550
+064760
+121600
+137400
+328130
+095700
+263770
+007390
+036930
+036540
+039200
+060720
+036570
+078340
+178320
+036830
+253450
+141080
+083310
+080530
+066970
+032500
+033640
+141080
+064290
+091700
+092870
+089030
+047310
+018290
+060280
+178920
+058820

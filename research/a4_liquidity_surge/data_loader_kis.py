@@ -27,7 +27,8 @@ def load_universe_5y() -> list[str]:
     """KOSPI top-80 + delisted union (best-effort survivorship correction)."""
     tickers: list[str] = []
     seen = set()
-    for fname in ("universe_kospi_top80.txt", "universe_delisted_2020_2026.txt"):
+    for fname in ("universe_kospi_top80.txt", "universe_delisted_2020_2026.txt",
+                  "universe_kosdaq_midcap.txt"):
         fp = ROOT / fname
         if not fp.exists():
             continue

@@ -1,0 +1,20 @@
+[backfill] universe=136 range=20200101..20260508
+  [10/136] loaded=10 (last=000270 rows=1558)
+  [20/136] loaded=20 (last=017670 rows=1558)
+  [30/136] loaded=30 (last=024110 rows=1558)
+  [40/136] loaded=40 (last=138040 rows=1558)
+  [50/136] loaded=50 (last=161390 rows=1558)
+  [60/136] loaded=60 (last=011170 rows=1558)
+  [70/136] loaded=70 (last=005830 rows=1558)
+  [80/136] loaded=80 (last=247540 rows=1558)
+  [90/136] loaded=90 (last=213420 rows=1558)
+  [100/136] loaded=100 (last=067310 rows=1558)
+  [110/136] loaded=110 (last=328130 rows=927)
+  [120/136] loaded=120 (last=036830 rows=1558)
+  [130/136] loaded=130 (last=092870 rows=1558)
+  [136/136] loaded=136 (last=058820 rows=1558)
+
+[backfill] done in 726.2s
+[backfill] tickers loaded = 136/136
+[backfill] total daily rows = 208,456
+[backfill] sample range = 2020-01-02 .. 2026-05-08

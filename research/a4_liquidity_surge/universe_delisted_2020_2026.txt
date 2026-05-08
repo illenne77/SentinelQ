@@ -1,0 +1,10 @@
+# Known delistings or KOSPI200 removals 2020-2026 (best-effort).
+#
+# Status: PLACEHOLDER. Real source pending KRX OTP scraper or manual KIND review.
+# Without these names, survivorship bias is partial-only — see PREREG-0001 §10.
+#
+# Format:  <6-digit-ticker>  # name — note
+#
+# Add lines below as identified. Keep the list small and verifiable.
+
+# (no entries yet — see PREREG amendment when adding)

@@ -1,0 +1,118 @@
+[5y-walkforward] loading universe + bars from cache...
+[5y-walkforward] loaded 79 tickers
+[5y-walkforward] building all triggers...
+[5y-walkforward] total triggers (gate-pass + ATR) = 8713
+[5y-walkforward] date range: 2020-02-03 .. 2026-04-29
+
+==============================================================================================================
+  W1 (bear in test)
+  TRAIN: 2021-01-01 .. 2022-06-30    TEST: 2022-07-01 .. 2023-06-30
+==============================================================================================================
+  triggers: train=1888  test=1214
+
+  variant                                     TRAIN                                                                 
+  baseline fixed -2% / +3/+5                  n= 1888  net=-0.0037  hit=0.3755  stopout= 66.9%  ddPerTr=-0.0044  ..D
+  ATR k=1.5 / +3/+5                           n= 1888  net=-0.0028  hit=0.5254  stopout= 35.6%  ddPerTr=-0.0043  ..D
+  ATR k=2.0 / +5/+10                          n= 1888  net=-0.0039  hit=0.4629  stopout= 23.0%  ddPerTr=-0.0060  ..D
+  ATR k=2.0 / +7/+15                          n= 1888  net=-0.0039  hit=0.4322  stopout= 23.0%  ddPerTr=-0.0061  ..D
+  ATR k=2.0 / +10/+20                         n= 1888  net=-0.0040  hit=0.4115  stopout= 23.0%  ddPerTr=-0.0063  ..D
+  ATR k=2.5 / +5/+10                          n= 1888  net=-0.0032  hit=0.4746  stopout= 12.3%  ddPerTr=-0.0061  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 1888  net=-0.0031  hit=0.4444  stopout= 12.3%  ddPerTr=-0.0061  ..D
+
+  variant                                     TEST  (OOS)                                                           
+  baseline fixed -2% / +3/+5                  n= 1214  net=-0.0038  hit=0.3649  stopout= 63.4%  ddPerTr=-0.0046  ..D
+  ATR k=1.5 / +3/+5                           n= 1214  net=-0.0032  hit=0.5173  stopout= 32.9%  ddPerTr=-0.0046  ..D
+  ATR k=2.0 / +5/+10                          n= 1214  net=-0.0024  hit=0.4761  stopout= 18.5%  ddPerTr=-0.0042  ..D
+  ATR k=2.0 / +7/+15                          n= 1214  net=-0.0015  hit=0.4563  stopout= 18.5%  ddPerTr=-0.0035  ..D
+  ATR k=2.0 / +10/+20                         n= 1214  net=-0.0008  hit=0.4481  stopout= 18.5%  ddPerTr=-0.0033  ..D
+  ATR k=2.5 / +5/+10                          n= 1214  net=-0.0024  hit=0.4794  stopout= 10.1%  ddPerTr=-0.0042  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 1214  net=-0.0016  hit=0.4596  stopout= 10.1%  ddPerTr=-0.0036  ..D
+
+==============================================================================================================
+  W2 (mixed)
+  TRAIN: 2022-01-01 .. 2023-12-31    TEST: 2024-01-01 .. 2024-12-31
+==============================================================================================================
+  triggers: train=2498  test=1398
+
+  variant                                     TRAIN                                                                 
+  baseline fixed -2% / +3/+5                  n= 2498  net=-0.0038  hit=0.3711  stopout= 63.9%  ddPerTr=-0.0039  ..D
+  ATR k=1.5 / +3/+5                           n= 2498  net=-0.0039  hit=0.5072  stopout= 34.1%  ddPerTr=-0.0042  ..D
+  ATR k=2.0 / +5/+10                          n= 2498  net=-0.0042  hit=0.4612  stopout= 20.5%  ddPerTr=-0.0045  ..D
+  ATR k=2.0 / +7/+15                          n= 2498  net=-0.0036  hit=0.4392  stopout= 20.6%  ddPerTr=-0.0040  ..D
+  ATR k=2.0 / +10/+20                         n= 2498  net=-0.0031  hit=0.4287  stopout= 20.7%  ddPerTr=-0.0035  ..D
+  ATR k=2.5 / +5/+10                          n= 2498  net=-0.0041  hit=0.4668  stopout= 11.7%  ddPerTr=-0.0045  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 2498  net=-0.0035  hit=0.4448  stopout= 11.7%  ddPerTr=-0.0039  ..D
+
+  variant                                     TEST  (OOS)                                                           
+  baseline fixed -2% / +3/+5                  n= 1398  net=-0.0023  hit=0.3870  stopout= 65.9%  ddPerTr=-0.0034  ..D
+  ATR k=1.5 / +3/+5                           n= 1398  net=-0.0020  hit=0.5458  stopout= 35.9%  ddPerTr=-0.0039  ..D
+  ATR k=2.0 / +5/+10                          n= 1398  net=-0.0027  hit=0.5029  stopout= 23.0%  ddPerTr=-0.0059  ..D
+  ATR k=2.0 / +7/+15                          n= 1398  net=-0.0026  hit=0.4635  stopout= 23.0%  ddPerTr=-0.0065  ..D
+  ATR k=2.0 / +10/+20                         n= 1398  net=-0.0020  hit=0.4471  stopout= 23.0%  ddPerTr=-0.0067  ..D
+  ATR k=2.5 / +5/+10                          n= 1398  net=-0.0028  hit=0.5086  stopout= 15.5%  ddPerTr=-0.0059  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 1398  net=-0.0028  hit=0.4700  stopout= 15.5%  ddPerTr=-0.0066  ..D
+
+==============================================================================================================
+  W3 (bull-tilted)
+  TRAIN: 2023-01-01 .. 2024-12-31    TEST: 2025-01-01 .. 2026-05-08
+==============================================================================================================
+  triggers: train=2770  test=2125
+
+  variant                                     TRAIN                                                                 
+  baseline fixed -2% / +3/+5                  n= 2770  net=-0.0027  hit=0.3841  stopout= 63.6%  ddPerTr=-0.0029  ..D
+  ATR k=1.5 / +3/+5                           n= 2770  net=-0.0026  hit=0.5274  stopout= 34.4%  ddPerTr=-0.0030  ..D
+  ATR k=2.0 / +5/+10                          n= 2770  net=-0.0029  hit=0.4852  stopout= 21.2%  ddPerTr=-0.0035  ..D
+  ATR k=2.0 / +7/+15                          n= 2770  net=-0.0024  hit=0.4578  stopout= 21.2%  ddPerTr=-0.0032  ..D
+  ATR k=2.0 / +10/+20                         n= 2770  net=-0.0019  hit=0.4422  stopout= 21.3%  ddPerTr=-0.0033  ..D
+  ATR k=2.5 / +5/+10                          n= 2770  net=-0.0028  hit=0.4917  stopout= 13.0%  ddPerTr=-0.0034  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 2770  net=-0.0023  hit=0.4643  stopout= 13.0%  ddPerTr=-0.0033  ..D
+
+  variant                                     TEST  (OOS)                                                           
+  baseline fixed -2% / +3/+5                  n= 2125  net=-0.0015  hit=0.3807  stopout= 66.4%  ddPerTr=-0.0016  ..D
+  ATR k=1.5 / +3/+5                           n= 2125  net=+0.0042  hit=0.6221  stopout= 28.1%  ddPerTr=-0.0011  .HD
+  ATR k=2.0 / +5/+10                          n= 2125  net=+0.0069  hit=0.5911  stopout= 19.4%  ddPerTr=-0.0015  .HD
+  ATR k=2.0 / +7/+15                          n= 2125  net=+0.0084  hit=0.5576  stopout= 19.7%  ddPerTr=-0.0018  ..D
+  ATR k=2.0 / +10/+20                         n= 2125  net=+0.0095  hit=0.5346  stopout= 19.7%  ddPerTr=-0.0019  ..D
+  ATR k=2.5 / +5/+10                          n= 2125  net=+0.0073  hit=0.6038  stopout= 11.6%  ddPerTr=-0.0015  .HD
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 2125  net=+0.0087  hit=0.5699  stopout= 11.9%  ddPerTr=-0.0019  ..D
+
+==============================================================================================================
+  FULL PERIOD 2021-01-01 .. 2026-05-08
+==============================================================================================================
+  triggers: 7326
+
+  baseline fixed -2% / +3/+5                  n= 7326  net=-0.0028  hit=0.3773  stopout= 65.6%  ddPerTr=-0.0030  ..D
+  ATR k=1.5 / +3/+5                           n= 7326  net=-0.0008  hit=0.5538  stopout= 33.0%  ddPerTr=-0.0025  ..D
+  ATR k=2.0 / +5/+10                          n= 7326  net=-0.0003  hit=0.5101  stopout= 21.1%  ddPerTr=-0.0030  ..D
+  ATR k=2.0 / +7/+15                          n= 7326  net=+0.0003  hit=0.4798  stopout= 21.2%  ddPerTr=-0.0028  ..D
+  ATR k=2.0 / +10/+20                         n= 7326  net=+0.0009  hit=0.4618  stopout= 21.2%  ddPerTr=-0.0026  ..D
+  ATR k=2.5 / +5/+10                          n= 7326  net=-0.0000  hit=0.5195  stopout= 12.4%  ddPerTr=-0.0031  ..D
+  ATR k=2.5 / +7/+15  <-- prereg primary      n= 7326  net=+0.0006  hit=0.4892  stopout= 12.5%  ddPerTr=-0.0029  ..D
+
+==============================================================================================================
+  PREREG-0001 PRIMARY VARIANT ??VERDICT TABLE
+==============================================================================================================
+  window                  split   verdict (per PREREG 짠4)
+  ----------------------------------------------------------------------------------------------------
+  W1 (bear in test)       train   hit:FAIL (0.4444)      mean:FAIL (-0.0031)     alive:FAIL (-0.0031)
+  W1 (bear in test)       test    hit:FAIL (0.4596)      mean:FAIL (-0.0016)     alive:FAIL (-0.0016)
+  W2 (mixed)              train   hit:FAIL (0.4448)      mean:FAIL (-0.0035)     alive:FAIL (-0.0035)
+  W2 (mixed)              test    hit:FAIL (0.4700)      mean:FAIL (-0.0028)     alive:FAIL (-0.0028)
+  W3 (bull-tilted)        train   hit:FAIL (0.4643)      mean:FAIL (-0.0023)     alive:FAIL (-0.0023)
+  W3 (bull-tilted)        test    hit:FAIL (0.5699)      mean:FAIL (+0.0087)     alive:PASS
+  FULL                    all     hit:FAIL (0.4892)      mean:FAIL (+0.0006)     alive:PASS
+
+==============================================================================================================
+  RANK STABILITY (test windows; by net mean)
+==============================================================================================================
+  rank  W1 (bear in test)                 W2 (mixed)                        W3 (bull-tilted)                
+  1     ATR k=2.0 / +10/+20               ATR k=2.0 / +10/+20               ATR k=2.0 / +10/+20             
+  2     ATR k=2.0 / +7/+15                ATR k=1.5 / +3/+5                 ATR k=2.5 / +7/+15  <-- prereg p
+  3     ATR k=2.5 / +7/+15  <-- prereg p  baseline fixed -2% / +3/+5        ATR k=2.0 / +7/+15              
+  4     ATR k=2.0 / +5/+10                ATR k=2.0 / +7/+15                ATR k=2.5 / +5/+10              
+  5     ATR k=2.5 / +5/+10                ATR k=2.0 / +5/+10                ATR k=2.0 / +5/+10              
+  6     ATR k=1.5 / +3/+5                 ATR k=2.5 / +7/+15  <-- prereg p  ATR k=1.5 / +3/+5               
+  7     baseline fixed -2% / +3/+5        ATR k=2.5 / +5/+10                baseline fixed -2% / +3/+5      
+
+  Prereg primary ranks across test windows: [3, 6, 2]
+  PREREG 짠4 'walk-forward stability' check: FAIL (must be <= 3)

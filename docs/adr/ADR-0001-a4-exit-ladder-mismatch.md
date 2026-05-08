@@ -173,6 +173,11 @@ trader:
 
 ## Walk-Forward OOS Result (added 2026-05-08)
 
+> **⚠️ SUPERSEDED by [ADR-0002](ADR-0002-a4-5y-walkforward-failure.md)**.
+> The single-window OOS pass recorded below was a regime-selection
+> artifact. Subsequent 5y validation across W1/W2/W3 (2021-01..2026-05)
+> failed all KPIs. See ADR-0002 for the authoritative verdict.
+
 Train (2025-01-01..2025-12-31, n=1414):
 * ATR k=2.5 / +7/+15 → net +0.67%, hit 55.5%, stop-out 11.0% (**KPI fail** on both)
 

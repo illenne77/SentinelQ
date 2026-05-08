@@ -31,6 +31,7 @@ from data_loader import (  # noqa: E402
     get_kospi200,
     load_daily_bars_batch,
 )
+from costs import CONSERVATIVE, DEFAULT, CHEAP  # noqa: E402
 
 
 def run(
@@ -71,7 +72,7 @@ def run(
         return df
 
     valid = df.dropna(subset=["ret_fwd"])
-    print(f"\n[backtest] === results ===")
+    print(f"\n[backtest] === results (gross) ===")
     print(f"  total triggers      : {len(df)}")
     print(f"  with forward return : {len(valid)}")
     print(f"  mean fwd {horizon}d return : {valid['ret_fwd'].mean():.4f}")
@@ -82,16 +83,28 @@ def run(
           f"{valid[valid['ret_fwd']>0]['ret_fwd'].mean():.4f} / "
           f"{valid[valid['ret_fwd']<0]['ret_fwd'].mean():.4f}")
 
-    # Bucket by surge intensity
-    print("\n  by surge_ratio bucket:")
+    # Apply transaction costs across multiple cost profiles.
+    print(f"\n[backtest] === results (net of cost) ===")
+    print(f"  {'profile':<14} {'rt_bps':>7} {'mean':>8} {'median':>8} {'hit':>6}")
+    for name, cm in [("CHEAP", CHEAP), ("DEFAULT", DEFAULT), ("CONSERVATIVE", CONSERVATIVE)]:
+        net = valid["ret_fwd"].apply(cm.net_return)
+        print(f"  {name:<14} {cm.round_trip_bps():>7.1f} "
+              f"{net.mean():>+8.4f} {net.median():>+8.4f} {(net > 0).mean():>6.3f}")
+
+    # Bucket by surge intensity (gross + net default)
+    print("\n  by surge_ratio bucket (DEFAULT cost):")
     df_v = valid.copy()
     df_v["bucket"] = pd.cut(
         df_v["surge_ratio"],
         bins=[1.5, 2.0, 3.0, 5.0, 100.0],
         labels=["1.5-2.0", "2.0-3.0", "3.0-5.0", "5.0+"],
     )
-    by_bucket = df_v.groupby("bucket", observed=True)["ret_fwd"].agg(
-        ["count", "mean", "median"]
+    df_v["ret_net"] = df_v["ret_fwd"].apply(DEFAULT.net_return)
+    by_bucket = df_v.groupby("bucket", observed=True).agg(
+        n=("ret_fwd", "count"),
+        gross_mean=("ret_fwd", "mean"),
+        net_mean=("ret_net", "mean"),
+        net_hit=("ret_net", lambda s: (s > 0).mean()),
     )
     print(by_bucket.to_string())
 

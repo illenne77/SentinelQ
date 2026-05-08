@@ -1,0 +1,60 @@
+[A3] loading bars...
+[A3] loaded 79 tickers
+[A3] building triggers per variant...
+  V1 plan literal                  -> 947 triggers
+  V2 tight comp atr<=0.10          -> 633 triggers
+  V3 tight vol >=2.0x              -> 628 triggers
+  V4 longer base 40d               -> 446 triggers
+  V5 no SMA20 exit                 -> 947 triggers
+
+==============================================================================================================
+  W1 (bear in test)    TEST: 2022-07-01 .. 2023-06-30
+==============================================================================================================
+  V1 plan literal                   n= 153  net=-0.0012  hit=0.366  PF= 0.91  hold= 4.8d  ddPerTr=-0.0035  ...T
+  V2 tight comp atr<=0.10           n= 105  net=-0.0010  hit=0.362  PF= 0.93  hold= 5.1d  ddPerTr=-0.0044  ...T
+  V3 tight vol >=2.0x               n=  83  net=-0.0042  hit=0.325  PF= 0.72  hold= 4.3d  ddPerTr=-0.0049  ...T
+  V4 longer base 40d                n=  74  net=-0.0099  hit=0.243  PF= 0.40  hold= 4.4d  ddPerTr=-0.0106  ...T
+  V5 no SMA20 exit                  n= 153  net=-0.0013  hit=0.366  PF= 0.91  hold= 4.9d  ddPerTr=-0.0035  ...T
+
+==============================================================================================================
+  W2 (mixed)    TEST: 2024-01-01 .. 2024-12-31
+==============================================================================================================
+  V1 plan literal                   n= 102  net=-0.0112  hit=0.245  PF= 0.37  hold= 2.9d  ddPerTr=-0.0109  ...T
+  V2 tight comp atr<=0.10           n=  71  net=-0.0090  hit=0.296  PF= 0.45  hold= 3.1d  ddPerTr=-0.0088  ...T
+  V3 tight vol >=2.0x               n=  77  net=-0.0104  hit=0.273  PF= 0.40  hold= 2.8d  ddPerTr=-0.0101  ...T
+  V4 longer base 40d                n=  44  net=-0.0122  hit=0.205  PF= 0.34  hold= 2.9d  ddPerTr=-0.0115  ...T
+  V5 no SMA20 exit                  n= 102  net=-0.0112  hit=0.245  PF= 0.37  hold= 2.9d  ddPerTr=-0.0109  ...T
+
+==============================================================================================================
+  W3 (bull-tilted)    TEST: 2025-01-01 .. 2026-05-08
+==============================================================================================================
+  V1 plan literal                   n= 199  net=-0.0041  hit=0.312  PF= 0.76  hold= 3.2d  ddPerTr=-0.0044  ...T
+  V2 tight comp atr<=0.10           n= 119  net=-0.0030  hit=0.311  PF= 0.83  hold= 3.1d  ddPerTr=-0.0039  ...T
+  V3 tight vol >=2.0x               n= 114  net=-0.0050  hit=0.281  PF= 0.73  hold= 2.9d  ddPerTr=-0.0070  ...T
+  V4 longer base 40d                n=  72  net=-0.0060  hit=0.292  PF= 0.65  hold= 2.9d  ddPerTr=-0.0058  ...T
+  V5 no SMA20 exit                  n= 199  net=-0.0041  hit=0.312  PF= 0.76  hold= 3.2d  ddPerTr=-0.0044  ...T
+
+==============================================================================================================
+  FULL 2021-01-01 .. 2026-05-08
+==============================================================================================================
+  V1 plan literal                   n= 778  net=-0.0069  hit=0.281  PF= 0.59  hold= 3.7d  ddPerTr=-0.0072  ...T
+  V2 tight comp atr<=0.10           n= 518  net=-0.0065  hit=0.288  PF= 0.60  hold= 3.7d  ddPerTr=-0.0069  ...T
+  V3 tight vol >=2.0x               n= 499  net=-0.0085  hit=0.255  PF= 0.51  hold= 3.3d  ddPerTr=-0.0090  ...T
+  V4 longer base 40d                n= 349  net=-0.0090  hit=0.249  PF= 0.47  hold= 3.5d  ddPerTr=-0.0096  ...T
+  V5 no SMA20 exit                  n= 778  net=-0.0069  hit=0.281  PF= 0.59  hold= 3.7d  ddPerTr=-0.0072  ...T
+
+==============================================================================================================
+  PREREG-0003 §10 DECISION TABLE
+==============================================================================================================
+  variant                           W1 grad  W2 grad  W3 grad  FULL grad  rank stable 
+  ----------------------------------------------------------------------------------------------------
+  V1 plan literal                   False    False    False    False      ranks=[2, 3, 2] YES 
+  V2 tight comp atr<=0.10           False    False    False    False      ranks=[1, 1, 1] YES 
+  V3 tight vol >=2.0x               False    False    False    False      ranks=[4, 2, 4] NO  
+  V4 longer base 40d                False    False    False    False      ranks=[5, 5, 5] NO  
+  V5 no SMA20 exit                  False    False    False    False      ranks=[3, 4, 3] NO  
+
+  V1 PF on test windows: ['0.91', '0.37', '0.76']
+
+  Branch outcome:
+  --> D: kill A3 (PF below 1.3 across V1/V2)

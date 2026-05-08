@@ -125,6 +125,25 @@ def run(
         )
         print(by_bucket.to_string())
 
+        # Bucket-exclusion experiment: drop the 2.0–3.0× weak-zone and
+        # report the resulting net edge (DEFAULT cost). Baseline KPI from
+        # plan v2.2 §7.3: hit rate ≥ 58%, mean ≥ +1.2% / trade.
+        print("\n  === bucket-exclusion experiment (drop 2.0-3.0x, GATE-PASS, DEFAULT cost) ===")
+        kept = df_v[df_v["bucket"] != "2.0-3.0"]
+        dropped = df_v[df_v["bucket"] == "2.0-3.0"]
+        if not kept.empty:
+            n_kept = len(kept)
+            n_drop = len(dropped)
+            mean_g = kept["ret_fwd"].mean()
+            mean_n = kept["ret_net"].mean()
+            med_n = kept["ret_net"].median()
+            hit_n = (kept["ret_net"] > 0).mean()
+            print(f"  kept     : n={n_kept}  gross_mean={mean_g:+.4f}  net_mean={mean_n:+.4f}  net_median={med_n:+.4f}  net_hit={hit_n:.4f}")
+            print(f"  dropped  : n={n_drop} (2.0-3.0x bucket)")
+            kpi_mean_pass = "PASS" if mean_n >= 0.012 else "FAIL"
+            kpi_hit_pass = "PASS" if hit_n >= 0.58 else "FAIL"
+            print(f"  KPI v2.2 7.3:  mean >= +1.2% [{kpi_mean_pass}]   hit >= 58% [{kpi_hit_pass}]")
+
     out = ROOT / "_cache" / f"backtest_{start}_{end}_t{threshold}_h{horizon}.parquet"
     df.to_parquet(out, index=False)
     print(f"\n[backtest] saved triggers to {out}")

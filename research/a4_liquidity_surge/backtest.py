@@ -32,6 +32,7 @@ from data_loader import (  # noqa: E402
     load_daily_bars_batch,
 )
 from costs import CONSERVATIVE, DEFAULT, CHEAP  # noqa: E402
+from gates import apply_daily_gates, load_gates  # noqa: E402
 
 
 def run(
@@ -49,13 +50,18 @@ def run(
     bars_by_ticker = load_daily_bars_batch(tickers, start, end, verbose=True)
     print(f"[backtest] loaded bars for {len(bars_by_ticker)} tickers")
 
+    gates = load_gates()
+    print(f"[backtest] gates: ADV>={gates.min_avg_daily_value_eokwon}억, "
+          f"price∈[{gates.min_price_krw:,.0f}, {gates.max_price_krw:,.0f}] KRW")
+
     rows: list[dict] = []
     for t, daily in bars_by_ticker.items():
         feats = compute_surge_ratios(daily, lookback=20, threshold=threshold)
         if feats.empty:
             continue
         fwd = forward_return(daily, horizon=horizon).rename("ret_fwd")
-        feats = feats.join(fwd)
+        gate_pass = apply_daily_gates(daily, gates, lookback=20).rename("gate_pass")
+        feats = feats.join(fwd).join(gate_pass)
         for date, row in feats[feats["triggered"]].iterrows():
             rows.append({
                 "ticker": t,
@@ -64,6 +70,7 @@ def run(
                 "volume": int(row["volume"]),
                 "surge_ratio": float(row["surge_ratio"]),
                 "ret_fwd": float(row["ret_fwd"]) if pd.notna(row["ret_fwd"]) else None,
+                "gate_pass": bool(row["gate_pass"]) if pd.notna(row["gate_pass"]) else False,
             })
 
     df = pd.DataFrame(rows)
@@ -72,41 +79,51 @@ def run(
         return df
 
     valid = df.dropna(subset=["ret_fwd"])
+    gated = valid[valid["gate_pass"]]
+    print(f"\n[backtest] === gate filter ===")
+    print(f"  triggers (with fwd ret) : {len(valid)}")
+    print(f"  passed daily gates       : {len(gated)}  ({len(gated)/len(valid):.1%})")
+
     print(f"\n[backtest] === results (gross) ===")
-    print(f"  total triggers      : {len(df)}")
-    print(f"  with forward return : {len(valid)}")
-    print(f"  mean fwd {horizon}d return : {valid['ret_fwd'].mean():.4f}")
-    print(f"  median               : {valid['ret_fwd'].median():.4f}")
-    print(f"  std                  : {valid['ret_fwd'].std():.4f}")
-    print(f"  hit rate (>0)        : {(valid['ret_fwd'] > 0).mean():.4f}")
-    print(f"  win/loss avg         : "
-          f"{valid[valid['ret_fwd']>0]['ret_fwd'].mean():.4f} / "
-          f"{valid[valid['ret_fwd']<0]['ret_fwd'].mean():.4f}")
+    for label, sub in [("ALL TRIGGERS", valid), ("GATE-PASS ONLY", gated)]:
+        if sub.empty:
+            print(f"  {label}: empty")
+            continue
+        print(f"  {label}:")
+        print(f"    n                   : {len(sub)}")
+        print(f"    mean fwd {horizon}d return : {sub['ret_fwd'].mean():+.4f}")
+        print(f"    median               : {sub['ret_fwd'].median():+.4f}")
+        print(f"    hit rate (>0)        : {(sub['ret_fwd'] > 0).mean():.4f}")
+        print(f"    win/loss avg         : "
+              f"{sub[sub['ret_fwd']>0]['ret_fwd'].mean():+.4f} / "
+              f"{sub[sub['ret_fwd']<0]['ret_fwd'].mean():+.4f}")
 
-    # Apply transaction costs across multiple cost profiles.
-    print(f"\n[backtest] === results (net of cost) ===")
+    # Apply transaction costs across multiple cost profiles (gate-pass set).
+    print(f"\n[backtest] === results net-of-cost (GATE-PASS ONLY) ===")
     print(f"  {'profile':<14} {'rt_bps':>7} {'mean':>8} {'median':>8} {'hit':>6}")
-    for name, cm in [("CHEAP", CHEAP), ("DEFAULT", DEFAULT), ("CONSERVATIVE", CONSERVATIVE)]:
-        net = valid["ret_fwd"].apply(cm.net_return)
-        print(f"  {name:<14} {cm.round_trip_bps():>7.1f} "
-              f"{net.mean():>+8.4f} {net.median():>+8.4f} {(net > 0).mean():>6.3f}")
+    if not gated.empty:
+        for name, cm in [("CHEAP", CHEAP), ("DEFAULT", DEFAULT), ("CONSERVATIVE", CONSERVATIVE)]:
+            net = gated["ret_fwd"].apply(cm.net_return)
+            print(f"  {name:<14} {cm.round_trip_bps():>7.1f} "
+                  f"{net.mean():>+8.4f} {net.median():>+8.4f} {(net > 0).mean():>6.3f}")
 
-    # Bucket by surge intensity (gross + net default)
-    print("\n  by surge_ratio bucket (DEFAULT cost):")
-    df_v = valid.copy()
-    df_v["bucket"] = pd.cut(
-        df_v["surge_ratio"],
-        bins=[1.5, 2.0, 3.0, 5.0, 100.0],
-        labels=["1.5-2.0", "2.0-3.0", "3.0-5.0", "5.0+"],
-    )
-    df_v["ret_net"] = df_v["ret_fwd"].apply(DEFAULT.net_return)
-    by_bucket = df_v.groupby("bucket", observed=True).agg(
-        n=("ret_fwd", "count"),
-        gross_mean=("ret_fwd", "mean"),
-        net_mean=("ret_net", "mean"),
-        net_hit=("ret_net", lambda s: (s > 0).mean()),
-    )
-    print(by_bucket.to_string())
+    # Bucket by surge intensity (GATE-PASS, gross + net default)
+    if not gated.empty:
+        print("\n  by surge_ratio bucket (GATE-PASS, DEFAULT cost):")
+        df_v = gated.copy()
+        df_v["bucket"] = pd.cut(
+            df_v["surge_ratio"],
+            bins=[1.5, 2.0, 3.0, 5.0, 100.0],
+            labels=["1.5-2.0", "2.0-3.0", "3.0-5.0", "5.0+"],
+        )
+        df_v["ret_net"] = df_v["ret_fwd"].apply(DEFAULT.net_return)
+        by_bucket = df_v.groupby("bucket", observed=True).agg(
+            n=("ret_fwd", "count"),
+            gross_mean=("ret_fwd", "mean"),
+            net_mean=("ret_net", "mean"),
+            net_hit=("ret_net", lambda s: (s > 0).mean()),
+        )
+        print(by_bucket.to_string())
 
     out = ROOT / "_cache" / f"backtest_{start}_{end}_t{threshold}_h{horizon}.parquet"
     df.to_parquet(out, index=False)

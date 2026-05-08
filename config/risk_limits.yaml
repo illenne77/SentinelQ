@@ -1,0 +1,142 @@
+# Risk Limits — SentinelQ Investment Agent
+# Version: 1.1 (Sprint 0 — KIS instrument gates added)
+# Capital base: 10,000,000 KRW
+# Edit policy: Changes require ADR + explicit user approval (anti scope creep).
+
+capital:
+  base_krw: 10_000_000
+  currency: KRW
+
+phase: paper  # paper | small_live | full
+# Transitions: paper -> small_live -> full
+# Demotion is automatic on graduation criteria failure.
+
+# ---- Position limits ----
+position_limits:
+  per_phase:
+    paper:
+      max_position_pct: 0.05         # 5% = 500,000 KRW per name
+      max_concurrent_positions: 3
+    small_live:
+      max_position_pct: 0.03         # 3% = 300,000 KRW per name
+      max_concurrent_positions: 3
+      max_total_exposure_pct: 0.09   # 9% = 900,000 KRW
+    full:
+      max_position_pct: 0.10         # 10% = 1,000,000 KRW per name
+      max_concurrent_positions: 5
+    phase2:
+      max_position_pct: 0.15
+      max_concurrent_positions: 8
+  sector_concentration_pct: 0.30     # max 30% in single sector
+  blacklist_after_consecutive_stoploss: 2
+  blacklist_days: 30
+
+# ---- Loss limits (deterministic Risk Engine enforces) ----
+loss_limits:
+  per_trade:
+    stop_loss_pct: -0.03             # -3% from entry → auto liquidate
+  daily:
+    max_loss_pct: -0.02              # -2% (200,000 KRW) → block new entries today
+    action: block_new_entries
+  weekly:
+    max_loss_pct: -0.04              # -4% (400,000 KRW) → halt 1 week + post-mortem PR
+    action: halt_until_next_monday
+    require_postmortem_pr: true
+  monthly:
+    max_loss_pct: -0.07              # -7% (700,000 KRW) → cooldown 2w + phase review
+    action: cooldown_2_weeks
+    require_phase_review_gate: true
+  drawdown:
+    max_total_mdd_pct: -0.15         # -15% (1,500,000 KRW) → kill switch
+    action: kill_switch
+    require_redesign_pr_before_restart: true
+
+# ---- Instrument-level pre-trade gates ----
+# Evaluated on the latest market_quote_snapshot row BEFORE any sizing/scoring.
+# A failed gate short-circuits with reason code; nothing downstream runs.
+# Sources are KIS field names from /uapi/domestic-stock/v1/quotations/inquire-price.
+instrument_gates:
+  # Hard blocks — entry is forbidden when TRUE
+  block_if_managed_issue: true              # KIS: mang_issu_cls_code != 'N'
+  block_if_investment_warning: true         # KIS: invt_caful_yn = 'Y'
+  block_if_market_warning_codes:            # KIS: mrkt_warn_cls_code (00=정상)
+    - "01"                                  # 투자주의
+    - "02"                                  # 투자경고
+    - "03"                                  # 투자위험
+  block_if_trading_halted: true             # KIS: temp_stop_yn
+  block_if_settlement_trade: true           # KIS: sltr_yn (정리매매)
+  block_if_short_overhang: false            # KIS: short_over_yn — informational in Phase 0
+
+  # Soft pauses — existing positions kept, new entries deferred
+  pause_if_vi_active: true                  # KIS: vi_cls_code != 'N'  (VI 발동)
+  pause_if_overtime_vi_active: true         # KIS: ovtm_vi_cls_code
+
+  # Liquidity / size floors
+  min_market_cap_eokwon: 1000               # 시가총액 ≥ 1,000억 (~100B KRW)
+  min_avg_daily_value_eokwon: 50            # 일평균 거래대금 ≥ 50억
+  max_price_krw: 1_000_000                  # tick-size & sizing sanity ceiling
+  min_price_krw: 1_000                      # avoid penny names
+
+  # Foreign holding band (KR-specific structural filter)
+  foreign_holding_pct_min: 0.0              # informational floor
+  foreign_holding_pct_max: 50.0             # 50% above triggers foreign-cap risk
+
+  # Data freshness — reject snapshot too old to trade on
+  max_snapshot_age_seconds: 60
+
+  # On gate failure
+  on_block:
+    log_severity: 3                          # severity-3 = info, no incident
+    emit_metric: risk.gate.blocked
+    record_reason_code: true                 # e.g. GATE_MANAGED, GATE_VI
+
+# ---- Sequential event limits ----
+sequential_limits:
+  consecutive_losing_trades: 5       # → halt 1 day + per-strategy 30d winrate review
+  consecutive_stoploss_same_symbol: 2 # → blacklist 30d
+  suspected_auto_exit_malfunction: 1  # → kill switch + reconciliation
+
+# ---- Operational limits ----
+operational_limits:
+  llm_daily_calls:
+    paper: 100
+    small_live: 100
+    full: 500
+  llm_monthly_cost_usd:
+    paper: 50
+    small_live: 80
+    full: 400
+    alert_at_pct: 0.8
+    action_on_exceed: tier_downgrade  # opus -> sonnet -> haiku
+  data_freshness_seconds:
+    quote: 60
+    disclosure: 300
+    news: 900
+  reconciliation:
+    frequency: daily
+    tolerance_krw: 0
+    action_on_mismatch: severity_2_incident
+
+# ---- Graduation criteria ----
+graduation:
+  paper_to_small_live:
+    weeks_required: 4
+    severity_2_incidents_max: 0
+    market_uptime_pct_min: 1.00
+    auto_exit_triggers_min: 100
+    bias_checklist_all_pass: true
+    limit_rules_validated: true       # forced trigger tests pass
+  small_live_to_full:
+    weeks_required: 4
+    min_trades: 30
+    alpha_after_costs_positive: true
+    paper_vs_live_return_gap_max_pct: 0.015
+    user_psych_check_pass: true       # ≤1 system-override urge per stoploss event
+    paper_criteria_still_holding: true
+
+# ---- Notes ----
+notes: |
+  - All thresholds are evaluated against realized P&L (not unrealized).
+  - Time windows are exchange business days, KST baseline; US market is on hold until Phase 1 late stage.
+  - Kill switch behavior is defined in chapter 9.3 of the plan (ADR required).
+  - This file is the single source of truth for runtime Risk Engine; the plan document mirrors values for human review.

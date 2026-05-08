@@ -158,7 +158,7 @@ trader:
 | Multiple-testing | ⚠️ | ~5 parameter combos tested; not Bonferroni-corrected |
 | LLM determinism  | n/a | Quant signal, no LLM involved |
 | Cost-net         | ✓ | All KPIs reported net of 31bp DEFAULT round-trip |
-| OOS walk-forward | ✗ | Single 1.4y window; no train/test split |
+| OOS walk-forward | ⚠️ | 12mo train + 4mo test done (`exp_walkforward.py`); test PASSES both KPIs but train-test asymmetry suggests strong-up regime in test window — bear-market data needed |
 
 ## References
 
@@ -167,4 +167,28 @@ trader:
   * `exit_rules.py` — §7.5 ladder simulator
   * `exit_backtest.py` — exit-aware A4 backtest
   * `exp_stop_sweep.py` — stop-level sensitivity (this ADR's evidence)
-* Commits: `6bbed0c` (exit-rule simulator + this finding)
+  * `exp_atr_sweep.py` — ATR-adaptive stop sweep (resolution evidence)
+  * `exp_walkforward.py` — train/test OOS validation
+* Commits: `6bbed0c` (mismatch finding), `0f7303c` (ATR resolution), `51a1d72` (walk-forward OOS)
+
+## Walk-Forward OOS Result (added 2026-05-08)
+
+Train (2025-01-01..2025-12-31, n=1414):
+* ATR k=2.5 / +7/+15 → net +0.67%, hit 55.5%, stop-out 11.0% (**KPI fail** on both)
+
+Test  (2026-01-01..2026-05-08, n=589):
+* ATR k=2.5 / +7/+15 → net **+1.74%**, hit **64.2%**, stop-out 12.9% (**KPI pass on both**)
+
+Rank stability: 5/7 variants identical rank across splits; prior winner sits at
+#2 on test (near-tie with k=2.0/+7/+15 at +1.76%). No catastrophic flip.
+
+**Caveat**: train-test asymmetry (test net 2.6× train net) is *opposite* of the
+typical overfit pattern. Most likely explanation: 2026-01..05 was a strong-up
+regime that disproportionately rewarded long momentum signals. Hence the test
+pass is **necessary but not sufficient** — A4 robustness in bear regimes
+remains unproven without ≥5y backfill including 2022 / 2024H2 drawdowns.
+
+**Decision deferred**: do NOT declare Phase 0 graduation on this evidence
+alone. Required next step: KIS chart API integration → 5y backfill including
+delisted names (survivorship-corrected) → re-run walk-forward across
+multi-regime windows.

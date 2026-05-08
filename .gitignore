@@ -1,0 +1,68 @@
+# ---- OS ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Editors / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# ---- Node (future) ----
+node_modules/
+npm-debug.log*
+
+# ---- Build / dist ----
+dist/
+build/
+*.log
+
+# ---- Secrets — NEVER commit ----
+# KIS API keys, broker tokens, anything resembling credentials
+secrets/
+*.pem
+*.key
+*.pfx
+*credentials*
+*appkey*
+*appsecret*
+kis_token*.json
+
+# ---- Data ----
+# Raw market data and backtest artifacts are not committed (size + license)
+data/
+*.parquet
+*.feather
+*.duckdb
+*.sqlite
+*.db
+research/**/results/
+research/**/*.csv
+research/**/*.png
+!research/**/sample_*.csv
+
+# ---- Office temp files ----
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# ---- Doc backups (kept locally only) ----
+Doc/_backup_*.docx
+
+# ---- Misc ----
+*.tmp
+*.bak
+.coverage
+htmlcov/

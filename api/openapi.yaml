@@ -1,0 +1,657 @@
+openapi: 3.1.0
+info:
+  title: SentinelQ Backend API
+  version: 0.1.0
+  description: |
+    Internal contract between the Scanner, LLM Decision Layer, Risk Engine,
+    Order Executor, and the operator UI.
+
+    **Stability**: v0 — breaking changes allowed until Sprint 2 lock.
+
+    **Scope per plan v2.2**:
+      * KR equities only (KOSPI/KOSDAQ). No options, futures, FX, crypto, OTC.
+      * LONG only.
+      * Phase-aware: every mutating endpoint accepts `phase` and rejects
+        cross-phase requests (paper API key MUST NOT submit live orders).
+
+    **Auth**: bearer token, single operator. Multi-user is out of scope.
+
+    **Idempotency**: every POST that mutates state requires `Idempotency-Key`
+    header (ULID). Server stores hash for 24h to deduplicate retries.
+
+    **Time**: all timestamps ISO-8601 with explicit timezone offset.
+    Server is KST baseline; storage is UTC.
+
+  contact:
+    name: SentinelQ Operator
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Local dev
+  - url: https://sentinelq.local/v1
+    description: On-prem
+
+tags:
+  - name: scan
+    description: Candidate discovery (deterministic + LLM-screened)
+  - name: decide
+    description: LLM Analyst evaluation of a single candidate
+  - name: risk
+    description: Risk Engine gate checks and limit state
+  - name: order
+    description: Order preview / submit / cancel
+  - name: positions
+    description: Current and historical positions
+  - name: ops
+    description: Health, readiness, kill switch
+
+paths:
+  # ---------------------------------------------------------------- scan
+  /scan:
+    post:
+      tags: [scan]
+      summary: Run scanner for one alpha hypothesis
+      description: |
+        Deterministic stage. Returns candidates that pass risk gates and
+        the alpha's quantitative trigger. The LLM Screener is invoked
+        only when `llm_screen=true` and only on the top-K.
+      operationId: runScan
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Scan completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  # -------------------------------------------------------------- decide
+  /decide:
+    post:
+      tags: [decide]
+      summary: LLM Analyst evaluation of a candidate
+      description: |
+        Calls the LLM Analyst with a structured prompt and returns a
+        decision artifact. Cost-controlled by tier (haiku/sonnet/opus)
+        via `risk_limits.operational_limits.llm_*`.
+
+        Output is deterministic JSON — see DecisionArtifact schema.
+      operationId: decideCandidate
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecideRequest'
+      responses:
+        '200':
+          description: Decision rendered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionArtifact'
+        '402':
+          description: LLM monthly budget exceeded — tier downgraded or blocked
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  # --------------------------------------------------------------- risk
+  /risk/check:
+    post:
+      tags: [risk]
+      summary: Evaluate all gates + limits for a hypothetical order
+      description: |
+        Pure function over current state + risk_limits.yaml.
+        Used by /order/preview and exposed standalone for UI dry-runs.
+      operationId: checkRisk
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskCheckRequest'
+      responses:
+        '200':
+          description: Risk evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskCheckResponse'
+
+  /risk/state:
+    get:
+      tags: [risk]
+      summary: Current risk state (limits, P&L, kill switch flag)
+      operationId: getRiskState
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+      responses:
+        '200':
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskState'
+
+  # -------------------------------------------------------------- order
+  /order/preview:
+    post:
+      tags: [order]
+      summary: Dry-run an order (sizing, costs, risk gates)
+      description: |
+        No external broker call. Returns the exact payload that would be
+        sent, plus expected fill / cost / post-trade risk state.
+      operationId: previewOrder
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderIntent'
+      responses:
+        '200':
+          description: Preview computed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPreview'
+
+  /order/submit:
+    post:
+      tags: [order]
+      summary: Submit an order to the broker
+      description: |
+        Phase-gated. Requires `decision_id` from a prior /decide call,
+        AND the order must match that decision (ticker, side, qty band).
+        Mismatched submission returns 409.
+      operationId: submitOrder
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderSubmitRequest'
+      responses:
+        '202':
+          description: Accepted by broker (async fill via /positions)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderAck'
+        '409':
+          description: Submitted order does not match referenced decision
+        '423':
+          description: Kill switch active or phase mismatch
+
+  /order/{order_id}:
+    get:
+      tags: [order]
+      summary: Get order state by ID
+      operationId: getOrder
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Order state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+    delete:
+      tags: [order]
+      summary: Cancel an open order
+      operationId: cancelOrder
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Cancellation requested
+
+  # ----------------------------------------------------------- positions
+  /positions:
+    get:
+      tags: [positions]
+      summary: Current open positions
+      operationId: listPositions
+      parameters:
+        - $ref: '#/components/parameters/Phase'
+      responses:
+        '200':
+          description: Positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Position' }
+
+  # ----------------------------------------------------------------- ops
+  /healthz:
+    get:
+      tags: [ops]
+      summary: Liveness
+      operationId: liveness
+      responses:
+        '200': { description: Alive }
+
+  /readyz:
+    get:
+      tags: [ops]
+      summary: Readiness — DB, broker session, LLM provider, market clock
+      operationId: readiness
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+        '503':
+          description: Not ready
+
+  /ops/kill-switch:
+    post:
+      tags: [ops]
+      summary: Engage kill switch (manual or auto)
+      description: |
+        Idempotent. Sets all phases to halted, cancels all open orders,
+        records the trigger reason. Re-enable requires redesign PR per
+        risk_limits.drawdown.require_redesign_pr_before_restart.
+      operationId: engageKillSwitch
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KillSwitchRequest'
+      responses:
+        '200':
+          description: Engaged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillSwitchState'
+
+# ============================================================================
+components:
+
+  parameters:
+    Phase:
+      name: X-Phase
+      in: header
+      required: true
+      description: Operating phase. Server rejects cross-phase calls.
+      schema:
+        type: string
+        enum: [paper, small_live, full]
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: ULID. Server deduplicates within 24h.
+      schema:
+        type: string
+        pattern: '^[0-9A-HJKMNP-TV-Z]{26}$'
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnprocessableEntity:
+      description: Semantically invalid (e.g. unknown ticker)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    RateLimited:
+      description: Too many requests (KIS or LLM rate limit hit)
+      headers:
+        Retry-After:
+          schema: { type: integer }
+
+  schemas:
+    # ---- Common ---------------------------------------------------------
+    Problem:
+      type: object
+      description: RFC 7807-ish error envelope
+      required: [type, title, status]
+      properties:
+        type:   { type: string, format: uri }
+        title:  { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:   { type: string, description: 'Machine-readable error code, e.g. GATE_MANAGED' }
+        trace_id: { type: string }
+
+    Ticker:
+      type: string
+      pattern: '^[0-9]{6}$'
+      description: KRX 6-digit code (e.g. 005930)
+
+    Money:
+      type: object
+      description: Always currency-tagged. No bare numbers for monetary values.
+      required: [amount, currency]
+      properties:
+        amount:   { type: string, description: 'Decimal string (NUMERIC(18,4)). Never float.' }
+        currency:
+          type: string
+          enum: [KRW]
+
+    AlphaId:
+      type: string
+      enum: [A1, A2, A3, A4, A5, A6, A7]
+      description: |
+        A1 PEAD / A2 Sector Rotation / A3 Vol Compression /
+        A4 Liquidity Surge / A5 News Reversal /
+        A6 Foreign-Inst Flow / A7 Regime Filter (gate, not a standalone alpha).
+
+    LLMTier:
+      type: string
+      enum: [haiku, sonnet, opus]
+
+    # ---- Scan -----------------------------------------------------------
+    ScanRequest:
+      type: object
+      required: [alpha_id]
+      properties:
+        alpha_id:    { $ref: '#/components/schemas/AlphaId' }
+        as_of:       { type: string, format: date-time, description: 'Defaults to now()' }
+        max_candidates: { type: integer, default: 20, minimum: 1, maximum: 100 }
+        llm_screen:  { type: boolean, default: false }
+        llm_tier:    { $ref: '#/components/schemas/LLMTier' }
+
+    ScanResponse:
+      type: object
+      required: [scan_id, alpha_id, as_of, candidates]
+      properties:
+        scan_id:    { type: string }
+        alpha_id:   { $ref: '#/components/schemas/AlphaId' }
+        as_of:      { type: string, format: date-time }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/ScanCandidate' }
+        gate_blocked:
+          type: array
+          description: Candidates that the alpha trigger fired on but a gate rejected.
+          items:
+            type: object
+            properties:
+              ticker:      { $ref: '#/components/schemas/Ticker' }
+              gate_reason: { type: string, example: GATE_MANAGED }
+
+    ScanCandidate:
+      type: object
+      required: [ticker, score, signals]
+      properties:
+        ticker:  { $ref: '#/components/schemas/Ticker' }
+        name_kr: { type: string }
+        score:   { type: number, description: 'Alpha-specific raw score' }
+        signals:
+          type: object
+          description: Free-form alpha-specific signals (e.g. surge_ratio, foreign_flow_5d).
+          additionalProperties: true
+        snapshot_observed_at:
+          type: string
+          format: date-time
+
+    # ---- Decide ---------------------------------------------------------
+    DecideRequest:
+      type: object
+      required: [scan_id, ticker]
+      properties:
+        scan_id: { type: string }
+        ticker:  { $ref: '#/components/schemas/Ticker' }
+        llm_tier: { $ref: '#/components/schemas/LLMTier' }
+        force_revalidate: { type: boolean, default: false }
+
+    DecisionArtifact:
+      type: object
+      required: [decision_id, ticker, action, confidence, rationale, llm, created_at]
+      properties:
+        decision_id: { type: string }
+        ticker:      { $ref: '#/components/schemas/Ticker' }
+        action:
+          type: string
+          enum: [BUY, PASS, WATCH]
+          description: SELL omitted — exits are deterministic per stop/time rules.
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        target_size_pct:
+          type: number
+          description: Fraction of capital. Risk Engine may reduce, never increase.
+        thesis:
+          type: string
+          description: 1-3 sentence human-readable rationale.
+        invalidation:
+          type: string
+          description: Concrete condition that voids the thesis (e.g. 'close < 70000').
+        risk_flags:
+          type: array
+          items: { type: string }
+        rationale:
+          type: object
+          description: Structured Analyst output (see prompts/schemas/analyst_output.json).
+          additionalProperties: true
+        llm:
+          type: object
+          required: [tier, prompt_version, cost_usd]
+          properties:
+            tier:           { $ref: '#/components/schemas/LLMTier' }
+            prompt_version: { type: string, example: 'analyst_v0.1' }
+            cost_usd:       { type: number }
+            tokens_in:      { type: integer }
+            tokens_out:     { type: integer }
+        created_at:  { type: string, format: date-time }
+        expires_at:  { type: string, format: date-time, description: 'Decision becomes stale after this; re-decide required.' }
+
+    # ---- Risk -----------------------------------------------------------
+    RiskCheckRequest:
+      type: object
+      required: [intent]
+      properties:
+        intent: { $ref: '#/components/schemas/OrderIntent' }
+
+    RiskCheckResponse:
+      type: object
+      required: [allowed, gates, limits]
+      properties:
+        allowed: { type: boolean }
+        gates:
+          type: array
+          items:
+            type: object
+            required: [name, passed]
+            properties:
+              name:   { type: string, example: GATE_MANAGED }
+              passed: { type: boolean }
+              detail: { type: string }
+        limits:
+          type: object
+          description: Current usage vs limit per category.
+          properties:
+            daily_loss_pct:   { type: number }
+            weekly_loss_pct:  { type: number }
+            mdd_pct:          { type: number }
+            open_positions:   { type: integer }
+            sector_exposure_pct: { type: number }
+        adjusted_size_pct:
+          type: number
+          description: |
+            If `allowed=true` but the requested size exceeds a soft limit,
+            this returns the largest size the engine will accept.
+
+    RiskState:
+      type: object
+      properties:
+        phase: { type: string }
+        kill_switch_active: { type: boolean }
+        capital: { $ref: '#/components/schemas/Money' }
+        realized_pnl_today:    { $ref: '#/components/schemas/Money' }
+        realized_pnl_week:     { $ref: '#/components/schemas/Money' }
+        realized_pnl_month:    { $ref: '#/components/schemas/Money' }
+        mdd_pct:               { type: number }
+        consecutive_losses:    { type: integer }
+        blacklisted_tickers:
+          type: array
+          items: { $ref: '#/components/schemas/Ticker' }
+
+    # ---- Order ----------------------------------------------------------
+    OrderIntent:
+      type: object
+      required: [ticker, side, qty, order_type]
+      properties:
+        decision_id: { type: string, description: 'Required for /order/submit; optional for /order/preview' }
+        ticker:      { $ref: '#/components/schemas/Ticker' }
+        side:
+          type: string
+          enum: [BUY, SELL]
+        qty:
+          type: integer
+          minimum: 1
+        order_type:
+          type: string
+          enum: [MARKET, LIMIT]
+        limit_price:
+          $ref: '#/components/schemas/Money'
+        time_in_force:
+          type: string
+          enum: [DAY, IOC, FOK]
+          default: DAY
+
+    OrderPreview:
+      type: object
+      required: [intent, expected_cost, post_trade_risk]
+      properties:
+        intent: { $ref: '#/components/schemas/OrderIntent' }
+        expected_fill_price: { $ref: '#/components/schemas/Money' }
+        expected_slippage_bps: { type: number }
+        commission:  { $ref: '#/components/schemas/Money' }
+        tax:         { $ref: '#/components/schemas/Money' }
+        expected_cost: { $ref: '#/components/schemas/Money' }
+        post_trade_risk: { $ref: '#/components/schemas/RiskCheckResponse' }
+        broker_payload:
+          type: object
+          description: Exact KIS request body that will be sent. Audit-friendly.
+          additionalProperties: true
+
+    OrderSubmitRequest:
+      type: object
+      required: [intent]
+      properties:
+        intent: { $ref: '#/components/schemas/OrderIntent' }
+
+    OrderAck:
+      type: object
+      required: [order_id, broker_order_id, accepted_at]
+      properties:
+        order_id:        { type: string }
+        broker_order_id: { type: string }
+        accepted_at:     { type: string, format: date-time }
+
+    Order:
+      type: object
+      required: [order_id, ticker, side, qty, status]
+      properties:
+        order_id:        { type: string }
+        broker_order_id: { type: string }
+        decision_id:     { type: string }
+        ticker:          { $ref: '#/components/schemas/Ticker' }
+        side:            { type: string, enum: [BUY, SELL] }
+        qty:             { type: integer }
+        filled_qty:      { type: integer }
+        avg_fill_price:  { $ref: '#/components/schemas/Money' }
+        status:
+          type: string
+          enum: [PENDING, PARTIAL, FILLED, CANCELLED, REJECTED]
+        submitted_at:    { type: string, format: date-time }
+        terminal_at:     { type: string, format: date-time }
+        reject_reason:   { type: string }
+
+    # ---- Positions -----------------------------------------------------
+    Position:
+      type: object
+      required: [ticker, qty, avg_cost, current_price, unrealized_pnl]
+      properties:
+        ticker:         { $ref: '#/components/schemas/Ticker' }
+        qty:            { type: integer }
+        avg_cost:       { $ref: '#/components/schemas/Money' }
+        current_price:  { $ref: '#/components/schemas/Money' }
+        unrealized_pnl: { $ref: '#/components/schemas/Money' }
+        unrealized_pnl_pct: { type: number }
+        opened_at:      { type: string, format: date-time }
+        decision_id:    { type: string }
+        stop_price:     { $ref: '#/components/schemas/Money' }
+        time_exit_due:  { type: string, format: date-time }
+
+    # ---- Ops -----------------------------------------------------------
+    Readiness:
+      type: object
+      required: [db, broker, llm, market_clock]
+      properties:
+        db:           { type: string, enum: [up, degraded, down] }
+        broker:       { type: string, enum: [up, degraded, down] }
+        llm:          { type: string, enum: [up, degraded, down] }
+        market_clock: { type: string, enum: [open, closed, pre, post] }
+        kill_switch_active: { type: boolean }
+
+    KillSwitchRequest:
+      type: object
+      required: [reason_code, source]
+      properties:
+        reason_code:
+          type: string
+          example: MDD_LIMIT_HIT
+        source:
+          type: string
+          enum: [auto, operator]
+        notes: { type: string }
+
+    KillSwitchState:
+      type: object
+      required: [active, since, reason_code, source]
+      properties:
+        active:      { type: boolean }
+        since:       { type: string, format: date-time }
+        reason_code: { type: string }
+        source:      { type: string }
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sentinelq/risk_reviewer_output.json",
+  "title": "Risk Reviewer Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id", "now", "verdict", "recommended_size_pct",
+    "checks", "findings", "confidence_in_verdict",
+    "staleness_seconds", "prompt_version"
+  ],
+  "properties": {
+    "decision_id":   { "type": "string" },
+    "now":           { "type": "string", "format": "date-time" },
+    "verdict":       { "type": "string",
+                       "enum": ["APPROVE","REDUCE_SIZE","REJECT","REQUEST_REVALIDATION"] },
+    "recommended_size_pct": { "type": "number", "minimum": 0, "maximum": 1 },
+    "checks": {
+      "type": "array",
+      "minItems": 9,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "passed", "severity"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "THESIS_FALSIFIABLE", "EVIDENCE_QUANTITATIVE",
+              "BIAS_LOOKAHEAD", "BIAS_HINDSIGHT",
+              "SIZE_VS_RISK_STATE", "CROSS_GATE_CONSISTENCY",
+              "EVENT_PROXIMITY", "LIQUIDITY_FLOOR",
+              "THESIS_NOT_HALLUCINATED"
+            ]
+          },
+          "passed":   { "type": "boolean" },
+          "severity": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "note":     { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "minLength": 5, "maxLength": 250 }
+    },
+    "staleness_seconds":     { "type": "integer", "minimum": 0 },
+    "confidence_in_verdict": { "type": "number", "minimum": 0, "maximum": 1 },
+    "prompt_version": { "type": "string", "pattern": "^risk_reviewer_v[0-9]+\\.[0-9]+$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "verdict": { "const": "REJECT" } } },
+      "then": {
+        "properties": { "recommended_size_pct": { "const": 0 } }
+      }
+    }
+  ]
+}

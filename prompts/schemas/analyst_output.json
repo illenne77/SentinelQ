@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sentinelq/analyst_output.json",
+  "title": "Analyst Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticker", "as_of", "alpha_id", "action", "confidence",
+    "thesis", "evidence", "invalidation", "target_size_pct",
+    "risk_flags", "data_gaps", "prompt_version"
+  ],
+  "properties": {
+    "ticker":   { "type": "string", "pattern": "^[0-9]{6}$" },
+    "as_of":    { "type": "string", "format": "date-time" },
+    "alpha_id": { "type": "string", "enum": ["A1","A2","A3","A4","A5","A6","A7"] },
+    "action":   { "type": "string", "enum": ["BUY","WATCH","PASS"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "thesis":   { "type": "string", "minLength": 20, "maxLength": 600 },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "value", "weight"],
+        "properties": {
+          "feature":       { "type": "string" },
+          "value":         {},
+          "weight":        { "type": "number", "minimum": 0, "maximum": 1 },
+          "glossary_ref":  { "type": "string", "pattern": "^§[0-9]+(\\.[0-9]+)?$" },
+          "is_quantitative": { "type": "boolean" }
+        }
+      }
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "description"],
+      "properties": {
+        "kind":        { "type": "string", "enum": ["price", "event"] },
+        "description": { "type": "string", "minLength": 10 },
+        "level":       { "type": "number" },
+        "by_when":     { "type": "string", "format": "date-time" }
+      }
+    },
+    "target_size_pct":  { "type": "number", "minimum": 0, "maximum": 1 },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "LIQUIDITY_THIN", "NEWS_AMBIGUOUS",
+          "EARNINGS_WITHIN_2D", "EX_DATE_WITHIN_2D",
+          "CROWDED_TRADE", "SECTOR_OVEREXPOSED",
+          "DATA_GAP",
+          "BIAS_LOOKAHEAD_SUSPECTED", "BIAS_HINDSIGHT_SUSPECTED",
+          "OTHER"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "risk_flags_detail": { "type": "string" },
+    "data_gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "prompt_version": { "type": "string", "pattern": "^analyst_v[0-9]+\\.[0-9]+$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "action": { "const": "BUY" } } },
+      "then": {
+        "properties": {
+          "confidence": { "minimum": 0.55 },
+          "target_size_pct": { "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "action": { "enum": ["WATCH","PASS"] } } },
+      "then": { "properties": { "target_size_pct": { "const": 0 } } }
+    }
+  ]
+}

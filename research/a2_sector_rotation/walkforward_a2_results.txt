@@ -1,0 +1,42 @@
+A2 Sector Rotation Walk-Forward Results
+PREREG-0004 V1-V5  x  W1/W2/W3/FULL
+Benchmark: equal-weighted basket of universe (proxy for KOSPI200)
+Cost: 0.30% round-trip
+==============================================================================
+[W1] V1   L=20 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-32.45%  cagr=+8.93%  sharpe=0.60  maxDD=-7.7%  hitM=45.5%  trades=36
+[W1] V2   L=60 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-16.46%  cagr=+24.93%  sharpe=1.81  maxDD=-11.5%  hitM=45.5%  trades=36
+[W1] V3   L=20 K=5 stop=0.03 tp=0.12 reb=M  alpha_ann=-34.32%  cagr=+7.07%  sharpe=0.61  maxDD=-7.3%  hitM=36.4%  trades=60
+[W1] V4   L=20 K=3 stop=0.02 tp=0.10 reb=M  alpha_ann=-37.75%  cagr=+3.64%  sharpe=0.26  maxDD=-7.7%  hitM=36.4%  trades=36
+[W1] V5   L=20 K=3 stop=0.03 tp=0.12 reb=W  alpha_ann=+32.20%  cagr=+73.59%  sharpe=2.29  maxDD=-25.7%  hitM=54.5%  trades=145
+------------------------------------------------------------------------------
+[W2] V1   L=20 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-1.99%  cagr=-7.13%  sharpe=-0.43  maxDD=-16.8%  hitM=36.4%  trades=36
+[W2] V2   L=60 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=+7.42%  cagr=+2.29%  sharpe=0.12  maxDD=-13.3%  hitM=36.4%  trades=36
+[W2] V3   L=20 K=5 stop=0.03 tp=0.12 reb=M  alpha_ann=-7.36%  cagr=-12.49%  sharpe=-1.00  maxDD=-17.3%  hitM=36.4%  trades=60
+[W2] V4   L=20 K=3 stop=0.02 tp=0.10 reb=M  alpha_ann=-0.01%  cagr=-5.15%  sharpe=-0.34  maxDD=-13.3%  hitM=54.5%  trades=36
+[W2] V5   L=20 K=3 stop=0.03 tp=0.12 reb=W  alpha_ann=-5.16%  cagr=-10.29%  sharpe=-0.33  maxDD=-32.9%  hitM=36.4%  trades=145
+------------------------------------------------------------------------------
+[W3] V1   L=20 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-58.64%  cagr=+22.56%  sharpe=1.21  maxDD=-13.7%  hitM=31.2%  trades=50
+[W3] V2   L=60 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-89.74%  cagr=-8.53%  sharpe=-0.44  maxDD=-21.4%  hitM=25.0%  trades=51
+[W3] V3   L=20 K=5 stop=0.03 tp=0.12 reb=M  alpha_ann=-52.21%  cagr=+29.00%  sharpe=1.67  maxDD=-12.2%  hitM=31.2%  trades=84
+[W3] V4   L=20 K=3 stop=0.02 tp=0.10 reb=M  alpha_ann=-56.51%  cagr=+24.69%  sharpe=1.44  maxDD=-13.3%  hitM=25.0%  trades=51
+[W3] V5   L=20 K=3 stop=0.03 tp=0.12 reb=W  alpha_ann=-60.55%  cagr=+20.65%  sharpe=0.62  maxDD=-20.1%  hitM=37.5%  trades=197
+------------------------------------------------------------------------------
+[FULL] V1   L=20 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-28.62%  cagr=+10.01%  sharpe=0.59  maxDD=-16.8%  hitM=40.0%  trades=122
+[FULL] V2   L=60 K=3 stop=0.03 tp=0.12 reb=M  alpha_ann=-35.68%  cagr=+2.96%  sharpe=0.17  maxDD=-23.6%  hitM=35.0%  trades=123
+[FULL] V3   L=20 K=5 stop=0.03 tp=0.12 reb=M  alpha_ann=-29.28%  cagr=+9.35%  sharpe=0.64  maxDD=-17.7%  hitM=35.0%  trades=204
+[FULL] V4   L=20 K=3 stop=0.02 tp=0.10 reb=M  alpha_ann=-28.81%  cagr=+9.82%  sharpe=0.62  maxDD=-13.3%  hitM=40.0%  trades=123
+[FULL] V5   L=20 K=3 stop=0.03 tp=0.12 reb=W  alpha_ann=-13.69%  cagr=+24.94%  sharpe=0.77  maxDD=-40.4%  hitM=45.0%  trades=488
+------------------------------------------------------------------------------
+
+KPI GATE EVAL (PREREG-0004 §8) — all gates on FULL test except G4-G5
+==============================================================================
+V1: G1_alpha=FAIL (-28.62%) G2_hitM=FAIL (40.0%) G3_DD=PASS (-16.8%) G4_winstab=FAIL G6_sharpe=FAIL (0.59)
+V2: G1_alpha=FAIL (-35.68%) G2_hitM=FAIL (35.0%) G3_DD=FAIL (-23.6%) G4_winstab=FAIL G6_sharpe=FAIL (0.17)
+V3: G1_alpha=FAIL (-29.28%) G2_hitM=FAIL (35.0%) G3_DD=PASS (-17.7%) G4_winstab=FAIL G6_sharpe=FAIL (0.64)
+V4: G1_alpha=FAIL (-28.81%) G2_hitM=FAIL (40.0%) G3_DD=PASS (-13.3%) G4_winstab=FAIL G6_sharpe=FAIL (0.62)
+V5: G1_alpha=FAIL (-13.69%) G2_hitM=FAIL (45.0%) G3_DD=FAIL (-40.4%) G4_winstab=FAIL G6_sharpe=PASS (0.77)
+
+G5 PRIMARY RANK STABILITY (V1 alpha rank in each window, of 5)
+  W1: V1 rank = 3/5  (order: ['V5', 'V2', 'V1', 'V3', 'V4'])
+  W2: V1 rank = 3/5  (order: ['V2', 'V4', 'V1', 'V5', 'V3'])
+  W3: V1 rank = 3/5  (order: ['V3', 'V4', 'V1', 'V5', 'V2'])

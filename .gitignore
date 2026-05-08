@@ -44,6 +44,7 @@ kis_token*.json
 # Raw market data and backtest artifacts are not committed (size + license)
 data/
 *.parquet
+research/**/_cache/
 *.feather
 *.duckdb
 *.sqlite

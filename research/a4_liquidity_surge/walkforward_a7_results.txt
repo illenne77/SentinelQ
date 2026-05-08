@@ -1,0 +1,94 @@
+[A4+A7] loading bars...
+[A4+A7] loaded 79 tickers
+[A4+A7] loading KODEX200 + classifying regime...
+[A4+A7] regime: 151 WEAK days (9.7%)
+[A4+A7] building triggers...
+[A4+A7] total triggers = 8713
+
+==============================================================================================================
+  W1 (bear in test)    TEST: 2022-07-01 .. 2023-06-30
+==============================================================================================================
+  test triggers: 1214
+  V1 ATR k=2.5 / +7/+15 | A7=none                n= 1214  net=-0.0016  hit=0.4596  stopout= 10.1%  ddPerTr=-0.0036  ..D
+  V1 ATR k=2.5 / +7/+15 | A7=F-skip              n= 1146  net=-0.0010  hit=0.4607  stopout=  9.9%  ddPerTr=-0.0034  ..D filt=68
+  V1 ATR k=2.5 / +7/+15 | A7=F-half              n= 1214  net=-0.0013  hit=0.4596  stopout= 10.1%  ddPerTr=-0.0034  ..D half=68
+  V2 ATR k=2.0 / +10/+20 | A7=none               n= 1214  net=-0.0008  hit=0.4481  stopout= 18.5%  ddPerTr=-0.0033  ..D
+  V2 ATR k=2.0 / +10/+20 | A7=F-skip             n= 1146  net=-0.0003  hit=0.4485  stopout= 18.4%  ddPerTr=-0.0035  ..D filt=68
+  V2 ATR k=2.0 / +10/+20 | A7=F-half             n= 1214  net=-0.0005  hit=0.4481  stopout= 18.5%  ddPerTr=-0.0033  ..D half=68
+
+==============================================================================================================
+  W2 (mixed)    TEST: 2024-01-01 .. 2024-12-31
+==============================================================================================================
+  test triggers: 1398
+  V1 ATR k=2.5 / +7/+15 | A7=none                n= 1398  net=-0.0028  hit=0.4700  stopout= 15.5%  ddPerTr=-0.0066  ..D
+  V1 ATR k=2.5 / +7/+15 | A7=F-skip              n= 1262  net=-0.0031  hit=0.4635  stopout= 15.8%  ddPerTr=-0.0073  ..D filt=136
+  V1 ATR k=2.5 / +7/+15 | A7=F-half              n= 1398  net=-0.0028  hit=0.4700  stopout= 15.5%  ddPerTr=-0.0066  ..D half=136
+  V2 ATR k=2.0 / +10/+20 | A7=none               n= 1398  net=-0.0020  hit=0.4471  stopout= 23.0%  ddPerTr=-0.0067  ..D
+  V2 ATR k=2.0 / +10/+20 | A7=F-skip             n= 1262  net=-0.0023  hit=0.4429  stopout= 23.9%  ddPerTr=-0.0075  ..D filt=136
+  V2 ATR k=2.0 / +10/+20 | A7=F-half             n= 1398  net=-0.0020  hit=0.4471  stopout= 23.0%  ddPerTr=-0.0067  ..D half=136
+
+==============================================================================================================
+  W3 (bull-tilted)    TEST: 2025-01-01 .. 2026-05-08
+==============================================================================================================
+  test triggers: 2125
+  V1 ATR k=2.5 / +7/+15 | A7=none                n= 2125  net=+0.0087  hit=0.5699  stopout= 11.9%  ddPerTr=-0.0019  ..D
+  V1 ATR k=2.5 / +7/+15 | A7=F-skip              n= 2038  net=+0.0086  hit=0.5692  stopout= 11.9%  ddPerTr=-0.0020  ..D filt=87
+  V1 ATR k=2.5 / +7/+15 | A7=F-half              n= 2125  net=+0.0085  hit=0.5699  stopout= 11.9%  ddPerTr=-0.0019  ..D half=87
+  V2 ATR k=2.0 / +10/+20 | A7=none               n= 2125  net=+0.0095  hit=0.5346  stopout= 19.7%  ddPerTr=-0.0019  ..D
+  V2 ATR k=2.0 / +10/+20 | A7=F-skip             n= 2038  net=+0.0094  hit=0.5329  stopout= 19.8%  ddPerTr=-0.0021  ..D filt=87
+  V2 ATR k=2.0 / +10/+20 | A7=F-half             n= 2125  net=+0.0093  hit=0.5346  stopout= 19.7%  ddPerTr=-0.0019  ..D half=87
+
+==============================================================================================================
+  FULL 2021-01-01 .. 2026-05-08
+==============================================================================================================
+  triggers: 7326
+  V1 ATR k=2.5 / +7/+15 | A7=none                n= 7326  net=+0.0006  hit=0.4892  stopout= 12.5%  ddPerTr=-0.0029  ..D
+  V1 ATR k=2.5 / +7/+15 | A7=F-skip              n= 6708  net=+0.0008  hit=0.4885  stopout= 12.6%  ddPerTr=-0.0029  ..D filt=618
+  V1 ATR k=2.5 / +7/+15 | A7=F-half              n= 7326  net=+0.0007  hit=0.4892  stopout= 12.5%  ddPerTr=-0.0027  ..D half=618
+  V2 ATR k=2.0 / +10/+20 | A7=none               n= 7326  net=+0.0009  hit=0.4618  stopout= 21.2%  ddPerTr=-0.0026  ..D
+  V2 ATR k=2.0 / +10/+20 | A7=F-skip             n= 6708  net=+0.0011  hit=0.4602  stopout= 21.5%  ddPerTr=-0.0026  ..D filt=618
+  V2 ATR k=2.0 / +10/+20 | A7=F-half             n= 7326  net=+0.0010  hit=0.4618  stopout= 21.2%  ddPerTr=-0.0025  ..D half=618
+
+==============================================================================================================
+  A7 KPI: MDD reduction vs raw A4 baseline (per plan v2.2 §6)
+==============================================================================================================
+  window                 variant                  mode            mdd   mdd_red%     hit       net
+  ----------------------------------------------------------------------------------------------------
+  W1 (bear in test)      V1 ATR k=2.5 / +7/+15    none        -0.0036             0.4596   -0.0016
+  W1 (bear in test)      V1 ATR k=2.5 / +7/+15    F-skip      -0.0034       4.6%  0.4607   -0.0010
+  W1 (bear in test)      V1 ATR k=2.5 / +7/+15    F-half      -0.0034       6.5%  0.4596   -0.0013
+  W1 (bear in test)      V2 ATR k=2.0 / +10/+20   none        -0.0033             0.4481   -0.0008
+  W1 (bear in test)      V2 ATR k=2.0 / +10/+20   F-skip      -0.0035      -6.0%  0.4485   -0.0003
+  W1 (bear in test)      V2 ATR k=2.0 / +10/+20   F-half      -0.0033      -0.0%  0.4481   -0.0005
+  W2 (mixed)             V1 ATR k=2.5 / +7/+15    none        -0.0066             0.4700   -0.0028
+  W2 (mixed)             V1 ATR k=2.5 / +7/+15    F-skip      -0.0073     -10.3%  0.4635   -0.0031
+  W2 (mixed)             V1 ATR k=2.5 / +7/+15    F-half      -0.0066       0.8%  0.4700   -0.0028
+  W2 (mixed)             V2 ATR k=2.0 / +10/+20   none        -0.0067             0.4471   -0.0020
+  W2 (mixed)             V2 ATR k=2.0 / +10/+20   F-skip      -0.0075     -12.6%  0.4429   -0.0023
+  W2 (mixed)             V2 ATR k=2.0 / +10/+20   F-half      -0.0067      -0.1%  0.4471   -0.0020
+  W3 (bull-tilted)       V1 ATR k=2.5 / +7/+15    none        -0.0019             0.5699   +0.0087
+  W3 (bull-tilted)       V1 ATR k=2.5 / +7/+15    F-skip      -0.0020      -1.6%  0.5692   +0.0086
+  W3 (bull-tilted)       V1 ATR k=2.5 / +7/+15    F-half      -0.0019       0.0%  0.5699   +0.0085
+  W3 (bull-tilted)       V2 ATR k=2.0 / +10/+20   none        -0.0019             0.5346   +0.0095
+  W3 (bull-tilted)       V2 ATR k=2.0 / +10/+20   F-skip      -0.0021      -7.2%  0.5329   +0.0094
+  W3 (bull-tilted)       V2 ATR k=2.0 / +10/+20   F-half      -0.0019       0.0%  0.5346   +0.0093
+  FULL                   V1 ATR k=2.5 / +7/+15    none        -0.0029             0.4892   +0.0006
+  FULL                   V1 ATR k=2.5 / +7/+15    F-skip      -0.0029      -0.9%  0.4885   +0.0008
+  FULL                   V1 ATR k=2.5 / +7/+15    F-half      -0.0027       3.8%  0.4892   +0.0007
+  FULL                   V2 ATR k=2.0 / +10/+20   none        -0.0026             0.4618   +0.0009
+  FULL                   V2 ATR k=2.0 / +10/+20   F-skip      -0.0026      -0.3%  0.4602   +0.0011
+  FULL                   V2 ATR k=2.0 / +10/+20   F-half      -0.0025       4.5%  0.4618   +0.0010
+
+==============================================================================================================
+  PREREG-0002 §8 DECISION TABLE
+==============================================================================================================
+  V1 ATR k=2.5 / +7/+15 + A7=F-skip   KPI hit/mean: 0/3 windows  avg MDD reduction:   -2.4%  -->  FAIL
+  V1 ATR k=2.5 / +7/+15 + A7=F-half   KPI hit/mean: 0/3 windows  avg MDD reduction:   +2.4%  -->  FAIL
+  V2 ATR k=2.0 / +10/+20 + A7=F-skip   KPI hit/mean: 0/3 windows  avg MDD reduction:   -8.6%  -->  FAIL
+  V2 ATR k=2.0 / +10/+20 + A7=F-half   KPI hit/mean: 0/3 windows  avg MDD reduction:   -0.0%  -->  FAIL
+
+  Branch (per PREREG-0002 §8):
+  - A: F-skip graduates
+  - B: F-half graduates but F-skip doesn't
+  - C: Neither graduates BUT avg MDD reduction >= 30% on at least one variant
+  - D: Neither graduates AND no MDD reduction --> kill stream

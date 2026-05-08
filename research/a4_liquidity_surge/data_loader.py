@@ -61,14 +61,22 @@ def get_kospi200(asof: str) -> list[str]:
 
 
 def _load_static_universe() -> list[str]:
-    """Fallback: read static ticker file, comments stripped."""
-    path = ROOT / "universe_kospi_top30.txt"
-    out: list[str] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.split("#", 1)[0].strip()
-        if line and len(line) == 6 and line.isdigit():
-            out.append(line)
-    return out
+    """Fallback: read static ticker file, comments stripped. Prefers top-80
+    over top-30 if available."""
+    for filename in ["universe_kospi_top80.txt", "universe_kospi_top30.txt"]:
+        path = ROOT / filename
+        if not path.exists():
+            continue
+        out: list[str] = []
+        seen: set[str] = set()
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line and len(line) == 6 and line.isdigit() and line not in seen:
+                out.append(line)
+                seen.add(line)
+        if out:
+            return out
+    return []
 
 
 def get_kosdaq150(asof: str) -> list[str]:

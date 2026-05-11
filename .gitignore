@@ -67,3 +67,11 @@ Doc/_backup_*.docx
 *.bak
 .coverage
 htmlcov/
+
+# ---- Claude Code harness (개인 기능·환경 의존) ----
+# DiRux 01-harness-validation-strategy 정책 차용 — .claude/만 미추적,
+# CLAUDE.md는 mandate·기술스택 정보이므로 commit 대상
+.claude/
+
+# ---- Phase 3 본인 거래내역 (절대 commit 금지) ----
+data/private/

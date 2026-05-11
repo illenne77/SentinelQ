@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinelq"
+version = "0.3.0"
+description = "KR Investor Tools — 양도세 자동 계산 + DART 공시 알림 (Phase 3)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "illenne77" }]
+
+# Phase 3 mandate에 필요한 최소 의존성만.
+# 알파 백테스트용 numpy/scipy 등은 Phase 0~2 history로 보존되며 본 Phase 3에선 미사용.
+dependencies = [
+    "pandas>=2.1",
+    "pyarrow>=15.0",       # parquet 캐시 읽기 (sentinelq/adapters/kis_data.py)
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+include = ["sentinelq*"]
+exclude = ["tests*", "research*", "scripts*", "data*", "secrets*"]
+
+# ---- ruff ----
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+    "research/",        # Phase 0~2 백테스트 코드 (archived)
+    "data/",
+    "secrets/",
+    ".venv/",
+]
+
+[tool.ruff.lint]
+# E·F: pyflakes·pycodestyle 기본
+# I: isort (import 정렬)
+# B: bugbear (흔한 버그 패턴)
+# UP: pyupgrade (구식 문법 자동 갱신)
+# SIM: simplify
+# RUF: ruff-specific
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = [
+    "E501",  # line-too-long (ruff format이 처리)
+    "B008",  # mutable default in function call (legitimate in fastapi-style)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---- pytest ----
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "integration: marks tests requiring real KIS API access (deselect with '-m \"not integration\"')",
+    "slow: marks tests that take >1s",
+]
+
+# ---- coverage ----
+[tool.coverage.run]
+source = ["sentinelq"]
+omit = [
+    "*/tests/*",
+    "*/research/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

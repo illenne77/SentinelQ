@@ -1,0 +1,19 @@
+{
+  "rt_cd": "0",
+  "msg_cd": "MCA00000",
+  "msg1": "정상 처리되었습니다.",
+  "ctx_area_fk200": "",
+  "ctx_area_nk200": "",
+  "output": [
+    {
+      "ord_dt": "20251223",
+      "dmst_ord_dt": "20251226",
+      "pdno": "NVDA",
+      "sll_buy_dvsn_cd": "02",
+      "ft_ccld_qty": "3",
+      "ft_ccld_unpr3": "138.42",
+      "frcr_cmsn_amt": "0.42",
+      "erlm_exrt": "1438.20"
+    }
+  ]
+}

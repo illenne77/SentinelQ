@@ -1,0 +1,29 @@
+{
+  "rt_cd": "0",
+  "msg_cd": "MCA00000",
+  "msg1": "정상 처리되었습니다.",
+  "ctx_area_fk100": "",
+  "ctx_area_nk100": "",
+  "output1": [
+    {
+      "ord_dt": "20251010",
+      "odno": "0001234567",
+      "pdno": "005930",
+      "sll_buy_dvsn_cd": "02",
+      "tot_ccld_qty": "100",
+      "avg_prvs": "78500",
+      "cmsn_amt": "117",
+      "ord_tax_amt": "0"
+    },
+    {
+      "ord_dt": "20251015",
+      "odno": "0001234890",
+      "pdno": "000660",
+      "sll_buy_dvsn_cd": "01",
+      "tot_ccld_qty": "50",
+      "avg_prvs": "189000",
+      "cmsn_amt": "142",
+      "ord_tax_amt": "21735"
+    }
+  ]
+}

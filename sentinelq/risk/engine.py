@@ -23,11 +23,11 @@ Pre-trade checks executed (short-circuit on first failure):
 The :class:`RiskCheckResult` dataclass carries both the boolean
 decision and a human-readable reason for audit logging.
 """
+
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 try:
     from typing import Protocol, runtime_checkable
@@ -44,18 +44,18 @@ class RiskConfig:
     """
 
     # Per-ticker notional cap in KRW (empty mapping = no per-ticker cap).
-    max_notional_per_order: Dict[str, float] = field(default_factory=dict)
+    max_notional_per_order: dict[str, float] = field(default_factory=dict)
 
     # Portfolio-level limits.
     max_position_count: int = 10
-    max_gross_exposure_pct: float = 1.0       # 1.0 = fully invested
-    max_single_position_pct: float = 0.20     # 20% of NAV per position
-    max_drawdown_pct: float = 0.15            # circuit breaker at -15% from peak
+    max_gross_exposure_pct: float = 1.0  # 1.0 = fully invested
+    max_single_position_pct: float = 0.20  # 20% of NAV per position
+    max_drawdown_pct: float = 0.15  # circuit breaker at -15% from peak
 
     # Sector exposure caps (keyed by sector code). Empty mapping disables
     # the check. The order-side caller is responsible for tagging orders
     # with a sector via ``OrderRequest.sector`` for the cap to apply.
-    max_sector_pct: Dict[str, float] = field(default_factory=dict)
+    max_sector_pct: dict[str, float] = field(default_factory=dict)
 
     # KIS API rate guard (seconds between successive submit acks).
     order_submit_cooldown_sec: float = 0.5
@@ -66,10 +66,10 @@ class OrderRequest:
     """A trade intent produced by strategy code, evaluated by the risk engine."""
 
     ticker: str
-    side: str            # "BUY" | "SELL"
+    side: str  # "BUY" | "SELL"
     quantity: int
     price: float
-    sector: Optional[str] = None  # optional sector tag for sector caps
+    sector: str | None = None  # optional sector tag for sector caps
 
     @property
     def notional(self) -> float:
@@ -131,7 +131,7 @@ class RiskEngine:
         self,
         order: OrderRequest,
         portfolio: PortfolioState,
-        sector_exposures: Optional[Dict[str, float]] = None,
+        sector_exposures: dict[str, float] | None = None,
     ) -> RiskCheckResult:
         """Evaluate ``order`` against ``portfolio`` state.
 
@@ -161,7 +161,7 @@ class RiskEngine:
             if elapsed < self.cfg.order_submit_cooldown_sec:
                 return RiskCheckResult(
                     False,
-                    "rate limit: {:.2f}s since last order".format(elapsed),
+                    f"rate limit: {elapsed:.2f}s since last order",
                     code="rate_limit",
                 )
 
@@ -170,22 +170,15 @@ class RiskEngine:
         if cap is not None and order.notional > cap:
             return RiskCheckResult(
                 False,
-                "{}: notional {:,.0f} > cap {:,.0f}".format(
-                    order.ticker, order.notional, cap
-                ),
+                f"{order.ticker}: notional {order.notional:,.0f} > cap {cap:,.0f}",
                 code="ticker_notional",
             )
 
         # 3. Position-count cap on new BUY into a flat portfolio slot.
-        if (
-            order.side == "BUY"
-            and portfolio.position_count() >= self.cfg.max_position_count
-        ):
+        if order.side == "BUY" and portfolio.position_count() >= self.cfg.max_position_count:
             return RiskCheckResult(
                 False,
-                "position count {} at maximum {}".format(
-                    portfolio.position_count(), self.cfg.max_position_count
-                ),
+                f"position count {portfolio.position_count()} at maximum {self.cfg.max_position_count}",
                 code="position_count",
             )
 
@@ -197,9 +190,7 @@ class RiskEngine:
         ):
             return RiskCheckResult(
                 False,
-                "single position {:.1%} exceeds limit {:.1%}".format(
-                    order.notional / nav, self.cfg.max_single_position_pct
-                ),
+                f"single position {order.notional / nav:.1%} exceeds limit {self.cfg.max_single_position_pct:.1%}",
                 code="position_pct",
             )
 
@@ -219,9 +210,7 @@ class RiskEngine:
             if projected > nav * cap_pct:
                 return RiskCheckResult(
                     False,
-                    "sector {} exposure {:.1%} exceeds cap {:.1%}".format(
-                        order.sector, projected / nav, cap_pct
-                    ),
+                    f"sector {order.sector} exposure {projected / nav:.1%} exceeds cap {cap_pct:.1%}",
                     code="sector_pct",
                 )
 
@@ -231,10 +220,7 @@ class RiskEngine:
             if projected_exposure > nav * self.cfg.max_gross_exposure_pct:
                 return RiskCheckResult(
                     False,
-                    "projected exposure {:.1%} exceeds limit {:.0%}".format(
-                        projected_exposure / nav,
-                        self.cfg.max_gross_exposure_pct,
-                    ),
+                    f"projected exposure {projected_exposure / nav:.1%} exceeds limit {self.cfg.max_gross_exposure_pct:.0%}",
                     code="gross_exposure",
                 )
 
@@ -244,9 +230,9 @@ class RiskEngine:
             return RiskCheckResult(
                 False,
                 (
-                    "portfolio drawdown {:.1%} exceeds circuit breaker "
-                    "-{:.0%} - all new orders blocked"
-                ).format(dd, self.cfg.max_drawdown_pct),
+                    f"portfolio drawdown {dd:.1%} exceeds circuit breaker "
+                    f"-{self.cfg.max_drawdown_pct:.0%} - all new orders blocked"
+                ),
                 code="drawdown",
             )
 

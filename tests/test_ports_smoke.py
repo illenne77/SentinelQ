@@ -2,6 +2,7 @@
 
 Run: py -m pytest tests/test_ports_smoke.py -v
 """
+
 from __future__ import annotations
 
 import sys

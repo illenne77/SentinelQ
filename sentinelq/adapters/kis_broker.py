@@ -12,12 +12,10 @@ A real KIS REST submission path (``order-cash`` TR ``TTTC0011U``/
 ``VTTC0011U``) is sketched but disabled until we have a tested alpha to
 deploy. Live trading is OUT OF SCOPE for this checkpoint.
 """
+
 from __future__ import annotations
 
 import os
-import time
-import uuid
-from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -33,7 +31,7 @@ class KisBroker:
         data_port,
         clock_port,
         commission_bps: float = 1.5,  # round-trip half = 7.5 bps + tax 23 bps -> set per side
-        tax_bps: float = 23.0,        # KR sell-side tax 0.23%
+        tax_bps: float = 23.0,  # KR sell-side tax 0.23%
         slippage_bps: float = 5.0,
         phase: str = "paper",
         kis_client=None,
@@ -53,10 +51,10 @@ class KisBroker:
         self._tax_bps = tax_bps
         self._slippage_bps = slippage_bps
         self._kis = kis_client
-        self._fills: List[Fill] = []
-        self._positions: Dict[str, int] = {}
+        self._fills: list[Fill] = []
+        self._positions: dict[str, int] = {}
         self._next_order_id = 1
-        self._seen_client_ids: Dict[str, str] = {}
+        self._seen_client_ids: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     def submit(self, order: OrderRequest) -> OrderAck:
@@ -75,16 +73,15 @@ class KisBroker:
         now = self._clock.now()
         ref_px = self._data.latest_close(order.ticker, now)
         if ref_px is None or ref_px <= 0:
-            return OrderAck(False, None, OrderStatus.REJECTED,
-                            f"no price for {order.ticker} at {now}")
+            return OrderAck(
+                False, None, OrderStatus.REJECTED, f"no price for {order.ticker} at {now}"
+            )
         if order.order_type == "LIMIT":
             limit_px = float(order.limit_price)
             if order.side == "BUY" and ref_px > limit_px:
-                return OrderAck(True, self._mk_id(order), OrderStatus.PENDING,
-                                "limit not crossed")
+                return OrderAck(True, self._mk_id(order), OrderStatus.PENDING, "limit not crossed")
             if order.side == "SELL" and ref_px < limit_px:
-                return OrderAck(True, self._mk_id(order), OrderStatus.PENDING,
-                                "limit not crossed")
+                return OrderAck(True, self._mk_id(order), OrderStatus.PENDING, "limit not crossed")
             fill_px = limit_px
         else:
             slip = ref_px * (self._slippage_bps / 10000.0)
@@ -130,9 +127,9 @@ class KisBroker:
             return False  # paper fills are immediate; no resting orders
         raise NotImplementedError("live cancel not enabled")
 
-    def fills_since(self, ts: pd.Timestamp) -> List[Fill]:
+    def fills_since(self, ts: pd.Timestamp) -> list[Fill]:
         cutoff = pd.Timestamp(ts)
         return [f for f in self._fills if pd.Timestamp(f.date) > cutoff]
 
-    def positions(self) -> Dict[str, int]:
+    def positions(self) -> dict[str, int]:
         return dict(self._positions)

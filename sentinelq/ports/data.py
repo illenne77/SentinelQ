@@ -1,7 +1,8 @@
 """DataPort — abstraction for historical & latest market data."""
+
 from __future__ import annotations
 
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 import pandas as pd
 
@@ -9,13 +10,11 @@ import pandas as pd
 class DataPort(Protocol):
     """Read-only market data accessor."""
 
-    def get_universe(self) -> List[str]:
+    def get_universe(self) -> list[str]:
         """Tickers (6-digit zero-padded) currently in the strategy universe."""
         ...
 
-    def get_daily_bars(
-        self, ticker: str, start: pd.Timestamp, end: pd.Timestamp
-    ) -> pd.DataFrame:
+    def get_daily_bars(self, ticker: str, start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
         """OHLCV with DatetimeIndex (tz-naive, KST trading dates).
 
         Required columns: ``open``, ``high``, ``low``, ``close``, ``volume``.
@@ -24,6 +23,6 @@ class DataPort(Protocol):
         """
         ...
 
-    def latest_close(self, ticker: str, asof: pd.Timestamp) -> Optional[float]:
+    def latest_close(self, ticker: str, asof: pd.Timestamp) -> float | None:
         """Most recent close at-or-before ``asof``. None if unavailable."""
         ...

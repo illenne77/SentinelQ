@@ -1,0 +1,52 @@
+# SentinelQ gitleaks 설정
+# KIS API 토큰·본인 거래내역 누출 방지
+
+title = "SentinelQ secrets baseline"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "kis-app-key"
+description = "KIS Open API App Key"
+regex = '''(?i)(KIS_APP_KEY|kis[_-]?app[_-]?key)\s*[:=]\s*["']?[A-Za-z0-9]{20,}'''
+tags = ["kis", "api-key"]
+
+[[rules]]
+id = "kis-app-secret"
+description = "KIS Open API App Secret"
+regex = '''(?i)(KIS_APP_SECRET|kis[_-]?app[_-]?secret)\s*[:=]\s*["']?[A-Za-z0-9/+=]{40,}'''
+tags = ["kis", "api-secret"]
+
+[[rules]]
+id = "kis-account"
+description = "KIS account number"
+regex = '''(?i)(KIS_ACCOUNT|kis[_-]?account)\s*[:=]\s*["']?\d{8,}-?\d{2,}'''
+tags = ["kis", "account"]
+
+[[rules]]
+id = "telegram-bot-token"
+description = "Telegram Bot Token"
+regex = '''\d{8,11}:[A-Za-z0-9_-]{35}'''
+tags = ["telegram"]
+
+[allowlist]
+description = "허용 경로 — 예시·테스트·문서"
+paths = [
+    '''\.venv/''',
+    '''\.git/''',
+    '''.*\.lock$''',
+    '''.*\.egg-info/''',
+    '''docs/adr/''',
+    '''docs/preregistration/''',
+    '''tests/fixtures/''',
+    '''README\.md''',
+    '''CLAUDE\.md''',
+    '''\.github/copilot-instructions\.md''',
+    '''\.gitleaks\.toml''',
+]
+
+regexes = [
+    # 더미·플레이스홀더 토큰
+    '''(?i)(your[_-]?(app[_-]?)?key[_-]?here|placeholder|example|dummy|xxx+)''',
+]

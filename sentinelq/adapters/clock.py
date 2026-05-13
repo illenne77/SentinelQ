@@ -1,8 +1,8 @@
 """ClockPort adapters: SimulatedClock for backtest, RealClock for paper/live."""
+
 from __future__ import annotations
 
 from datetime import datetime, time
-from typing import Optional
 
 import pandas as pd
 
@@ -22,7 +22,7 @@ class SimulatedClock:
             raise ValueError(f"clock cannot go backwards ({ts} < {self._now})")
         self._now = ts
 
-    def is_market_open(self, ts: Optional[pd.Timestamp] = None) -> bool:
+    def is_market_open(self, ts: pd.Timestamp | None = None) -> bool:
         t = pd.Timestamp(ts) if ts is not None else self._now
         if t.weekday() >= 5:
             return False
@@ -47,7 +47,7 @@ class RealClock:
         utc_now = datetime.utcnow()
         return pd.Timestamp(utc_now) + pd.Timedelta(hours=9)
 
-    def is_market_open(self, ts: Optional[pd.Timestamp] = None) -> bool:
+    def is_market_open(self, ts: pd.Timestamp | None = None) -> bool:
         t = pd.Timestamp(ts) if ts is not None else self.now()
         if t.weekday() >= 5:
             return False

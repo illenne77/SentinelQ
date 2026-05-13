@@ -1,7 +1,8 @@
 """ClockPort — abstraction over wall-clock vs simulated time."""
+
 from __future__ import annotations
 
-from typing import Optional, Protocol
+from typing import Protocol
 
 import pandas as pd
 
@@ -11,7 +12,7 @@ class ClockPort(Protocol):
         """Current time, tz-naive KST."""
         ...
 
-    def is_market_open(self, ts: Optional[pd.Timestamp] = None) -> bool:
+    def is_market_open(self, ts: pd.Timestamp | None = None) -> bool:
         """True if KRX cash market is open at ``ts`` (or now())."""
         ...
 

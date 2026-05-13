@@ -3,18 +3,19 @@
 Adapters MUST default to phase='paper'. Live adapters require
 explicit opt-in (see ``sentinelq/adapters/kis_broker.py``).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
-from typing import Dict, List, Optional, Protocol
+from enum import StrEnum
+from typing import Protocol
 
 import pandas as pd
 
 from sentinelq.portfolio.portfolio import Fill
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
@@ -29,8 +30,8 @@ class OrderRequest:
     side: str  # "BUY" | "SELL"
     qty: int
     order_type: str = "MARKET"  # "MARKET" | "LIMIT"
-    limit_price: Optional[float] = None
-    client_order_id: Optional[str] = None  # idempotency key
+    limit_price: float | None = None
+    client_order_id: str | None = None  # idempotency key
 
     def __post_init__(self):
         if self.side not in ("BUY", "SELL"):
@@ -46,9 +47,9 @@ class OrderRequest:
 @dataclass(frozen=True)
 class OrderAck:
     accepted: bool
-    broker_order_id: Optional[str]
+    broker_order_id: str | None
     status: OrderStatus
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class BrokerPort(Protocol):
@@ -62,10 +63,10 @@ class BrokerPort(Protocol):
         """Best-effort cancel."""
         ...
 
-    def fills_since(self, ts: pd.Timestamp) -> List[Fill]:
+    def fills_since(self, ts: pd.Timestamp) -> list[Fill]:
         """Chronological fills with ts > ``ts``. Empty if none."""
         ...
 
-    def positions(self) -> Dict[str, int]:
+    def positions(self) -> dict[str, int]:
         """Authoritative broker positions (ticker -> qty)."""
         ...

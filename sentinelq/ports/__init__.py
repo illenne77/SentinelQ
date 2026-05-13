@@ -15,11 +15,16 @@ Contract guarantees:
 
 See ``research/oss_review/architecture_patterns.md`` §2 for rationale.
 """
-from .data import DataPort
+
+from .broker import BrokerPort, OrderAck, OrderRequest, OrderStatus
 from .clock import ClockPort
-from .broker import BrokerPort, OrderRequest, OrderAck, OrderStatus
+from .data import DataPort
 
 __all__ = [
-    "DataPort", "ClockPort", "BrokerPort",
-    "OrderRequest", "OrderAck", "OrderStatus",
+    "BrokerPort",
+    "ClockPort",
+    "DataPort",
+    "OrderAck",
+    "OrderRequest",
+    "OrderStatus",
 ]

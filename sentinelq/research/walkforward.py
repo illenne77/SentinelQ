@@ -19,10 +19,12 @@ return a mapping with at minimum:
 Optional keys (``"benchmark_nav"`` etc.) are forwarded to
 :func:`compute_metrics` when present.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -44,23 +46,24 @@ class WFResult:
     """Result of one walk-forward step (the OOS test side, plus train ref)."""
 
     window: WFWindow
-    params: Dict[str, Any]
+    params: dict[str, Any]
     nav: pd.Series
-    trades: List[Any]
-    metrics: Dict[str, Any]
-    train_metrics: Dict[str, Any] = field(default_factory=dict)
+    trades: list[Any]
+    metrics: dict[str, Any]
+    train_metrics: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
 # Metrics
 # ---------------------------------------------------------------------------
 
+
 def compute_metrics(
     nav: pd.Series,
-    trades: Optional[List[Any]] = None,
-    benchmark_nav: Optional[pd.Series] = None,
+    trades: list[Any] | None = None,
+    benchmark_nav: pd.Series | None = None,
     ann: int = 252,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Compute annualised KPIs from a NAV series.
 
     Output keys (always present, matching the PREREG-0004 / A2 vocabulary):
@@ -90,7 +93,7 @@ def compute_metrics(
     ann:
         Annualisation factor (``252`` for daily KR equity bars).
     """
-    empty: Dict[str, Any] = {
+    empty: dict[str, Any] = {
         "n_days": 0,
         "cagr": 0.0,
         "vol": 0.0,
@@ -129,7 +132,7 @@ def compute_metrics(
         monthly = nav.resample("M").last().pct_change().dropna()
     hit_rate = float((monthly > 0).mean()) if len(monthly) > 0 else 0.0
 
-    out: Dict[str, Any] = {
+    out: dict[str, Any] = {
         "n_days": n,
         "cagr": float(cagr),
         "vol": float(vol),
@@ -150,9 +153,7 @@ def compute_metrics(
             b_rets = b.pct_change().dropna()
             b_years = len(b_rets) / float(ann)
             b_cum = float((1.0 + b_rets).prod() - 1.0)
-            cagr_b = (
-                (1.0 + b_cum) ** (1.0 / b_years) - 1.0 if b_years > 0 else 0.0
-            )
+            cagr_b = (1.0 + b_cum) ** (1.0 / b_years) - 1.0 if b_years > 0 else 0.0
             out["cagr_bench"] = float(cagr_b)
             out["alpha_ann"] = float(cagr - cagr_b)
 
@@ -162,6 +163,7 @@ def compute_metrics(
 # ---------------------------------------------------------------------------
 # Harness
 # ---------------------------------------------------------------------------
+
 
 class WalkForward:
     """Universal walk-forward harness.
@@ -178,19 +180,17 @@ class WalkForward:
     contract is supported.
     """
 
-    def __init__(self, windows: List[WFWindow]):
+    def __init__(self, windows: list[WFWindow]):
         self.windows = list(windows)
 
     def run(
         self,
-        strategy_fn: Callable[..., Dict[str, Any]],
-        param_grid: List[Dict[str, Any]],
+        strategy_fn: Callable[..., dict[str, Any]],
+        param_grid: list[dict[str, Any]],
         bars: Any,
-        select_params_fn: Optional[
-            Callable[[List[WFResult]], Dict[str, Any]]
-        ] = None,
+        select_params_fn: Callable[[list[WFResult]], dict[str, Any]] | None = None,
         verbose: bool = False,
-    ) -> List[WFResult]:
+    ) -> list[WFResult]:
         """Execute walk-forward over all configured windows.
 
         Parameters
@@ -212,10 +212,10 @@ class WalkForward:
         if not param_grid:
             raise ValueError("param_grid must contain at least one config")
 
-        oos_results: List[WFResult] = []
+        oos_results: list[WFResult] = []
 
         for window in self.windows:
-            train_results: List[WFResult] = []
+            train_results: list[WFResult] = []
             for params in param_grid:
                 r = strategy_fn(bars, params, window.train_start, window.train_end)
                 metrics = compute_metrics(
@@ -244,9 +244,7 @@ class WalkForward:
                 best = max(
                     train_results,
                     key=lambda x: (
-                        x.metrics.get("sharpe", float("-inf"))
-                        if x.metrics
-                        else float("-inf")
+                        x.metrics.get("sharpe", float("-inf")) if x.metrics else float("-inf")
                     ),
                 )
                 best_params = best.params
@@ -271,25 +269,25 @@ class WalkForward:
 
         return oos_results
 
-    def summary(self, results: List[WFResult]) -> pd.DataFrame:
+    def summary(self, results: list[WFResult]) -> pd.DataFrame:
         """One-row-per-window summary DataFrame for quick inspection."""
-        rows: List[Dict[str, Any]] = []
+        rows: list[dict[str, Any]] = []
         for r in results:
-            row: Dict[str, Any] = {
+            row: dict[str, Any] = {
                 "window": r.window.name,
                 "test_start": r.window.test_start,
                 "test_end": r.window.test_end,
             }
             for k, v in r.params.items():
-                row["param_{}".format(k)] = v
+                row[f"param_{k}"] = v
             for k, v in r.metrics.items():
-                row["oos_{}".format(k)] = v
+                row[f"oos_{k}"] = v
             for k, v in r.train_metrics.items():
-                row["train_{}".format(k)] = v
+                row[f"train_{k}"] = v
             rows.append(row)
         return pd.DataFrame(rows)
 
-    def combined_nav(self, results: List[WFResult]) -> pd.Series:
+    def combined_nav(self, results: list[WFResult]) -> pd.Series:
         """Stitch OOS NAV segments into a single continuous curve.
 
         Each subsequent segment is rescaled so it begins at the previous

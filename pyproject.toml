@@ -55,6 +55,10 @@ ignore = [
     "B008",  # mutable default in function call (legitimate in fastapi-style)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# tests/ 의 sys.path.insert 패턴은 의도된 것 — import는 그 뒤에 위치해야 함
+"tests/**/*.py" = ["E402"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

@@ -14,10 +14,10 @@ This module is broker-agnostic: KIS-specific commission and fill
 mechanics live in the broker adapter (Phase 3) which produces
 ``Fill`` events that drive ``Portfolio.on_fill``.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -91,11 +91,11 @@ class Portfolio:
 
     def __init__(self, initial_cash: float):
         self._cash: float = float(initial_cash)
-        self._positions: Dict[str, PositionState] = {}
+        self._positions: dict[str, PositionState] = {}
         self._peak_nav: float = float(initial_cash)
-        self._nav_series: List[Tuple[pd.Timestamp, float]] = []
+        self._nav_series: list[tuple[pd.Timestamp, float]] = []
         self._total_commission: float = 0.0
-        self._last_prices: Dict[str, float] = {}
+        self._last_prices: dict[str, float] = {}
         # Realized PnL from positions that have been fully closed and
         # dropped from ``self._positions``.
         self._closed_realized_pnl: float = 0.0
@@ -142,22 +142,16 @@ class Portfolio:
             proceeds = fill.quantity * fill.price - fill.commission
             self._cash += proceeds
             if pos is not None:
-                realized = (
-                    fill.quantity * (fill.price - pos.avg_cost) - fill.commission
-                )
+                realized = fill.quantity * (fill.price - pos.avg_cost) - fill.commission
                 pos.realized_pnl += realized
                 pos.quantity -= fill.quantity
                 if pos.quantity <= 0:
                     self._closed_realized_pnl += pos.realized_pnl
                     del self._positions[fill.ticker]
         else:
-            raise ValueError(
-                "Fill.side must be 'BUY' or 'SELL', got {!r}".format(fill.side)
-            )
+            raise ValueError(f"Fill.side must be 'BUY' or 'SELL', got {fill.side!r}")
 
-    def mark(
-        self, date: pd.Timestamp, prices: Dict[str, float]
-    ) -> float:
+    def mark(self, date: pd.Timestamp, prices: dict[str, float]) -> float:
         """End-of-bar mark-to-market.
 
         Updates the cached last-prices, refreshes the peak-NAV high-water
@@ -197,7 +191,7 @@ class Portfolio:
             total += pos.market_value(price)
         return total
 
-    def unrealized_pnl(self, ticker: Optional[str] = None) -> float:
+    def unrealized_pnl(self, ticker: str | None = None) -> float:
         """Unrealized PnL for ``ticker`` or summed across all positions."""
         if ticker is not None:
             pos = self._positions.get(ticker)
@@ -211,7 +205,7 @@ class Portfolio:
             total += pos.unrealized_pnl(price)
         return total
 
-    def realized_pnl(self, ticker: Optional[str] = None) -> float:
+    def realized_pnl(self, ticker: str | None = None) -> float:
         """Realized PnL for ``ticker`` or summed (open + closed positions)."""
         if ticker is not None:
             pos = self._positions.get(ticker)
@@ -236,7 +230,7 @@ class Portfolio:
         """Number of currently open positions."""
         return len(self._positions)
 
-    def positions(self) -> Dict[str, PositionState]:
+    def positions(self) -> dict[str, PositionState]:
         """Snapshot copy of the open positions map."""
         return dict(self._positions)
 

@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, "feature/**"]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: ruff + pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package (dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: ruff check
+        run: ruff check sentinelq/ tests/
+
+      - name: ruff format --check
+        run: ruff format --check sentinelq/ tests/
+
+      - name: pytest with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=sentinelq.tax \
+            --cov=sentinelq.portfolio \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            -m "not integration"
+
+      - name: Enforce baseline.json regression floor
+        # baseline.json의 test.pass를 회귀 차단 floor로 사용한다.
+        # 통과 테스트 수가 baseline보다 적으면 CI 실패.
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys, re
+          baseline = json.load(open(".claude/baseline.json"))
+          floor = baseline["test"]["pass"]
+          # pytest를 다시 quiet 모드로 실행하여 결과 카운트만 추출
+          result = subprocess.run(
+              ["pytest", "tests/", "-q", "-m", "not integration", "--no-header"],
+              capture_output=True, text=True
+          )
+          output = result.stdout + result.stderr
+          # 예: "46 passed in 1.23s" 패턴 매칭
+          match = re.search(r"(\d+) passed", output)
+          if not match:
+              print("CANNOT parse pytest output:")
+              print(output)
+              sys.exit(1)
+          passed = int(match.group(1))
+          print(f"baseline.json floor = {floor}, current pass = {passed}")
+          if passed < floor:
+              print(f"::error::Regression: {passed} < baseline {floor}")
+              sys.exit(1)
+          print("OK: at or above baseline floor.")
+          PY
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  secrets-scan:
+    name: gitleaks secrets scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml

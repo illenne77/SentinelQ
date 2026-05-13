@@ -1,16 +1,17 @@
 """Tests for sentinelq.research.walkforward."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from sentinelq.research.walkforward import (
+    WalkForward,
     WFResult,
     WFWindow,
-    WalkForward,
     compute_metrics,
 )
 
@@ -33,7 +34,7 @@ def test_compute_metrics_required_keys_present():
     nav = _drift_nav("2023-01-01", "2024-01-01")
     m = compute_metrics(nav, trades=[1, 2, 3])
     for key in ("cagr", "sharpe", "max_dd", "calmar", "hit_rate", "n_trades"):
-        assert key in m, "missing required KPI key: {}".format(key)
+        assert key in m, f"missing required KPI key: {key}"
     assert m["n_trades"] == 3
     assert "hit_month" in m
 
@@ -69,7 +70,7 @@ def test_walkforward_runs_all_windows_and_picks_best_by_sharpe():
         WFWindow("W2", "2022-07-01", "2023-06-30", "2023-07-01", "2023-12-31"),
     ]
 
-    def fake_strategy(bars: Any, params: Dict[str, Any], start: str, end: str):
+    def fake_strategy(bars: Any, params: dict[str, Any], start: str, end: str):
         return {
             "nav": _drift_nav(start, end, daily=params["daily"]),
             "trades": list(range(params.get("n_trades_seed", 5))),
@@ -124,9 +125,7 @@ def test_walkforward_combined_nav_is_continuous():
 
 
 def test_walkforward_empty_param_grid_raises():
-    wf = WalkForward(
-        [WFWindow("W", "2022-01-01", "2022-06-30", "2022-07-01", "2022-12-31")]
-    )
+    wf = WalkForward([WFWindow("W", "2022-01-01", "2022-06-30", "2022-07-01", "2022-12-31")])
     with pytest.raises(ValueError):
         wf.run(
             strategy_fn=lambda *a, **k: {"nav": pd.Series(dtype=float), "trades": []},

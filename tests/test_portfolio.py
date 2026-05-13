@@ -1,4 +1,5 @@
 """Tests for sentinelq.portfolio.portfolio."""
+
 from __future__ import annotations
 
 import pandas as pd

@@ -1,9 +1,8 @@
 """Tests for sentinelq.risk.engine."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-import pytest
 
 from sentinelq.risk.engine import (
     OrderRequest,

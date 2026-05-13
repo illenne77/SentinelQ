@@ -5,10 +5,10 @@ which are produced by ``scripts/kis_chart_backfill.py``. ``latest_close`` falls
 back to a live KIS REST call (``inquire-price``) when the cache is stale,
 controlled by ``allow_live`` flag.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ class KisData:
     def __init__(
         self,
         cache_dir: Path = ROOT / "data" / "cache" / "kis_daily",
-        universe_files: Optional[List[Path]] = None,
+        universe_files: list[Path] | None = None,
         allow_live: bool = False,
         kis_client=None,
     ):
@@ -34,10 +34,10 @@ class KisData:
                 ROOT / "research" / "a4_liquidity_surge" / "universe_kosdaq_midcap.txt",
             ]
         self._universe_files = universe_files
-        self._universe_cache: Optional[List[str]] = None
+        self._universe_cache: list[str] | None = None
         self._bar_cache: dict = {}
 
-    def get_universe(self) -> List[str]:
+    def get_universe(self) -> list[str]:
         if self._universe_cache is not None:
             return list(self._universe_cache)
         tickers = []
@@ -82,7 +82,7 @@ class KisData:
         m = (df.index >= pd.Timestamp(start)) & (df.index <= pd.Timestamp(end))
         return df.loc[m].copy()
 
-    def latest_close(self, ticker: str, asof: pd.Timestamp) -> Optional[float]:
+    def latest_close(self, ticker: str, asof: pd.Timestamp) -> float | None:
         df = self._load_full(ticker)
         if not df.empty:
             sub = df.loc[df.index <= pd.Timestamp(asof)]

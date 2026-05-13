@@ -1,9 +1,9 @@
 """Research utilities — walk-forward harness, metrics."""
 
 from sentinelq.research.walkforward import (
+    WalkForward,
     WFResult,
     WFWindow,
-    WalkForward,
     compute_metrics,
 )
 

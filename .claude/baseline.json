@@ -1,0 +1,95 @@
+{
+  "$comment": "SentinelQ Phase 3 단일 진실의 원천 (Single Source of Truth). 모든 docs/scripts/agents가 이 파일을 참조한다. 직접 박제 금지. DiRuxView baseline.json 패턴 차용.",
+  "phase": {
+    "current": "3",
+    "mandate": "KR Investor Tools (양도세 + DART 공시)",
+    "active_prereg": "PREREG-0008-tax-tool",
+    "active_amendments": ["PREREG-0008-amendment-1"]
+  },
+  "python": {
+    "min_version": "3.11",
+    "preferred_version": "3.12",
+    "_comment": "venv는 .venv/ — gitignore 등록됨"
+  },
+  "test": {
+    "framework": "pytest",
+    "pass": 46,
+    "fail": 0,
+    "skip": 0,
+    "total": 46,
+    "skip_tolerance": 3,
+    "measured_at": "2026-05-11",
+    "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
+    "test_dir": "tests/",
+    "coverage_target": 80,
+    "coverage_target_modules": ["sentinelq/tax/", "sentinelq/portfolio/"]
+  },
+  "lint": {
+    "tool": "ruff",
+    "config": "pyproject.toml",
+    "_comment": "ruff format + check. Phase 1에서 도입"
+  },
+  "branches": {
+    "protected": ["master", "main"],
+    "feature_pattern": "^feature/(T\\d+|phase3-)"
+  },
+  "loop": {
+    "default_max_loops": 5,
+    "_comment": "Generator agent의 Build→Review 자동 재시도 최대 횟수. DiRux 7회보다 낮음 (Phase 1 단순함)"
+  },
+  "kis": {
+    "_comment": "KIS API 환경변수 명세. 실제 값은 .env (gitignored)",
+    "required_env": [
+      "KIS_APP_KEY",
+      "KIS_APP_SECRET",
+      "KIS_ACCOUNT"
+    ],
+    "token_cache": "secrets/kis_token.json"
+  },
+  "kpi_gates": {
+    "_comment": "PREREG-0008 §5 KPI 게이트 - graduation 기준",
+    "G1": "본인 거래내역으로 2025 양도세 NTS 양식 30분 안에 출력",
+    "G2": "KIS+키움 합산 손익통산 정확 (수동 계산과 ±1원 일치)",
+    "G3": "세제 한도 추적 정확 (IRP+연금+ISA, 증권사 공식 잔여한도와 일치)",
+    "G4": "12월 손실 인식 권장 시뮬레이션 +100만원 절세 시나리오 1건+",
+    "G5": "tests/ 커버리지 ≥ 80% (sentinelq/tax/ 모듈)",
+    "G6": "본인 사용 가치 연 50만원+ 자기 평가 통과"
+  },
+  "stop_conditions": {
+    "_comment": "ADR-0013 §Method G1-G3 stop 조건",
+    "phase1_timeout_weeks": 6,
+    "phase1_grace_weeks": 2,
+    "phase1_total_max_weeks": 8,
+    "rejection_action": "ADR-0014 NO-GO 작성 + archive 재돌입"
+  },
+  "history": [
+    {
+      "date": "2026-05-11",
+      "pass": 0,
+      "fail": 0,
+      "skip": 0,
+      "note": "Phase 3 출범, DiRux 하네스 P0+P1 이식, Phase 1 Week 0 진입"
+    },
+    {
+      "date": "2026-05-11",
+      "pass": 32,
+      "fail": 0,
+      "skip": 0,
+      "note": "T001 Build Phase A 베이스라인. pyarrow 추가로 ports_smoke 통과. feature/T001-kis-history 브랜치"
+    },
+    {
+      "date": "2026-05-11",
+      "pass": 46,
+      "fail": 0,
+      "skip": 0,
+      "note": "T001 Build Phase B 완료. kis_history.py 427 LOC + test_kis_history.py 187 LOC, 14 신규 테스트 모두 통과"
+    },
+    {
+      "date": "2026-05-13",
+      "pass": 46,
+      "fail": 0,
+      "skip": 0,
+      "note": "하네스 L4→L4+ 강화. CI(.github/workflows/ci.yml) + gitleaks(.gitleaks.toml) + pre-commit(.pre-commit-config.yaml) 추가. ruff 베이스라인 클린화 (113→0 errors, 14 파일 format, StrEnum 마이그레이션, tests/ E402 per-file-ignore). pytest 회귀 없음."
+    }
+  ]
+}

@@ -50,29 +50,39 @@ jobs:
             -m "not integration"
 
       - name: Enforce baseline.json regression floor
-        # baseline.json의 test.pass를 회귀 차단 floor로 사용한다.
-        # 통과 테스트 수가 baseline보다 적으면 CI 실패.
+        # baseline.json의 test.total을 회귀 차단 floor로 사용한다.
+        # 수집된 테스트(passed + skipped)가 total 미만이면 실패 (테스트 유실 회귀).
+        # skip은 skip_tolerance 이내까지 허용 (예: KIS cache 부재로 인한 합법적 skip).
         run: |
           python - <<'PY'
           import json, subprocess, sys, re
           baseline = json.load(open(".claude/baseline.json"))
-          floor = baseline["test"]["pass"]
-          # pytest를 다시 quiet 모드로 실행하여 결과 카운트만 추출
+          total_floor = baseline["test"]["total"]
+          skip_tol = baseline["test"].get("skip_tolerance", 0)
           result = subprocess.run(
               ["pytest", "tests/", "-q", "-m", "not integration", "--no-header"],
               capture_output=True, text=True
           )
           output = result.stdout + result.stderr
-          # 예: "46 passed in 1.23s" 패턴 매칭
-          match = re.search(r"(\d+) passed", output)
-          if not match:
-              print("CANNOT parse pytest output:")
-              print(output)
-              sys.exit(1)
-          passed = int(match.group(1))
-          print(f"baseline.json floor = {floor}, current pass = {passed}")
-          if passed < floor:
-              print(f"::error::Regression: {passed} < baseline {floor}")
+          passed = int(re.search(r"(\d+) passed", output).group(1)) if re.search(r"(\d+) passed", output) else 0
+          skipped_m = re.search(r"(\d+) skipped", output)
+          skipped = int(skipped_m.group(1)) if skipped_m else 0
+          failed_m = re.search(r"(\d+) failed", output)
+          failed = int(failed_m.group(1)) if failed_m else 0
+          collected = passed + skipped + failed
+          print(f"baseline: total={total_floor}, skip_tol={skip_tol}")
+          print(f"current : passed={passed}, skipped={skipped}, failed={failed}, collected={collected}")
+          ok = True
+          if failed > 0:
+              print(f"::error::Test failures: {failed}")
+              ok = False
+          if collected < total_floor:
+              print(f"::error::Regression: collected {collected} < baseline total {total_floor} (테스트 유실)")
+              ok = False
+          if skipped > skip_tol:
+              print(f"::error::Too many skips: {skipped} > tolerance {skip_tol}")
+              ok = False
+          if not ok:
               sys.exit(1)
           print("OK: at or above baseline floor.")
           PY

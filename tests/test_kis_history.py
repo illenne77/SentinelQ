@@ -75,7 +75,7 @@ class _FakeResp:
 
 def _patch_urlopen(monkeypatch, responses):
     """`urllib.request.urlopen`을 mock — N개 응답을 순서대로 반환."""
-    if isinstance(responses, (bytes, bytearray)):
+    if isinstance(responses, bytes | bytearray):
         responses = [responses]
     iterator = iter(responses)
 

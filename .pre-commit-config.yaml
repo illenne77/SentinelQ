@@ -21,9 +21,9 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-        exclude: '\.md$'
+        exclude: '\.md$|^research/|^data/|^secrets/'
       - id: end-of-file-fixer
-        exclude: '\.md$'
+        exclude: '\.md$|^research/|^data/|^secrets/'
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files

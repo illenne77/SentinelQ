@@ -13,10 +13,10 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 126,
+    "pass": 145,
     "fail": 0,
     "skip": 0,
-    "total": 126,
+    "total": 145,
     "skip_tolerance": 3,
     "measured_at": "2026-05-15",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
@@ -107,6 +107,13 @@
     },
     {
       "date": "2026-05-15",
+      "pass": 103,
+      "fail": 0,
+      "skip": 0,
+      "note": "T004 세제 우대 한도 추적 완료. sentinelq/tax/deduction.py 신규 (DeductionLimits/AccountType/ContributionRecord/PensionCreditResult/ISAStatusResult/DeductionYearSummary + calculate_deduction). KR 룰: 연금저축 6백만/IRP 합산 9백만 한도, 세액공제율 16.5%/13.2%, ISA 연간·5년 누적 한도. tests/test_deduction.py 19건 신규 통과. coverage 100% on tax/deduction.py. feature/T004-deduction."
+    },
+    {
+      "date": "2026-05-15",
       "pass": 105,
       "fail": 0,
       "skip": 0,
@@ -118,6 +125,13 @@
       "fail": 0,
       "skip": 0,
       "note": "T006 NTS 양도세 신고서 양식 완료. sentinelq/reports/__init__.py + sentinelq/reports/nts_form.py 신규 (NTSSaleLine/NTSMarketBreakdown/NTSCapitalGainsForm + build_nts_form + export_summary_csv + export_detail_csv). NTS 공식법 20%+10% 분리, ROUND_DOWN, 신고기간 자동 계산, T003 교차검증값 포함. tests/test_nts_form.py 21건 신규 통과. coverage 100% on nts_form.py. G1 KPI 게이트 달성. feature/T006-nts-form."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 145,
+      "fail": 0,
+      "skip": 0,
+      "note": "main 통합 머지 완료. T004(feature/T004-deduction) 병렬 브랜치 합류. sentinelq/tax/deduction.py + tests/test_deduction.py 추가. 전체 T001~T006 합산: 145 passed (회귀 0)."
     }
   ]
 }

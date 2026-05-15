@@ -10,14 +10,24 @@ from sentinelq.tax.capital_gains import (
     calculate_all,
     calculate_year,
 )
+from sentinelq.tax.loss_harvesting import (
+    HarvestCandidate,
+    HoldingSnapshot,
+    LossHarvestingResult,
+    recommend_loss_harvest,
+)
 
 __all__ = [
     "DEFAULT_RULES",
     "TAX_YEAR_RULES_2026",
+    "HarvestCandidate",
+    "HoldingSnapshot",
+    "LossHarvestingResult",
     "MarketBreakdown",
     "TaxYearRules",
     "TaxYearSummary",
     "UnknownTaxYearError",
     "calculate_all",
     "calculate_year",
+    "recommend_loss_harvest",
 ]

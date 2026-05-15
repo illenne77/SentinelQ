@@ -13,10 +13,10 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 84,
+    "pass": 105,
     "fail": 0,
     "skip": 0,
-    "total": 84,
+    "total": 105,
     "skip_tolerance": 3,
     "measured_at": "2026-05-15",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
@@ -104,6 +104,13 @@
       "fail": 0,
       "skip": 0,
       "note": "T003 Capital Gains Calculator 완료. sentinelq/tax/__init__.py + sentinelq/tax/capital_gains.py 신규 (TaxYearRules/MarketBreakdown/TaxYearSummary + calculate_year + calculate_all). KR 룰: 250만 공제 + 22% 합산 + ROUND_DOWN, 이월공제 불가. tests/test_capital_gains.py 17건 신규 통과. coverage 100% on tax/capital_gains.py. feature/T003-capital-gains."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 105,
+      "fail": 0,
+      "skip": 0,
+      "note": "T005 12월 손실 인식 권장 완료. sentinelq/tax/loss_harvesting.py 신규 (HoldingSnapshot/HarvestCandidate/LossHarvestingResult + recommend_loss_harvest). 12월 1~30일 창, gain>250만 조건, 손실 큰 순 정렬, ROUND_DOWN 절세액. G4 시나리오 통과(saving=1,320,000≥100만). tests/test_loss_harvesting.py 21건 신규 통과. coverage 100% on loss_harvesting.py. feature/T005-loss-harvesting."
     }
   ]
 }

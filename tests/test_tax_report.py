@@ -14,7 +14,9 @@ from pathlib import Path
 from sentinelq.adapters.kis_history import Transaction
 from sentinelq.reports.nts_form import export_detail_csv, export_summary_csv
 from sentinelq.reports.tax_report import (
+    apply_fx_rates,
     main,
+    missing_fx_dates,
     run_pipeline,
     transactions_from_json,
     transactions_to_json,
@@ -72,6 +74,29 @@ def _us(
         fee=_D(fee),
         tax=_D(tax),
         fx_rate=_D(fx_rate),
+    )
+
+
+def _us_nofx(
+    trade_date: date,
+    side: str,
+    qty: int,
+    price: str,
+    ticker: str = "AAPL",
+) -> Transaction:
+    """fx_rate 없는 US 거래 — KIS 거래내역 endpoint가 환율 미제공."""
+    return Transaction(
+        trade_date=trade_date,
+        settle_date=None,
+        ticker=ticker,
+        market="US",
+        side=side,
+        quantity=qty,
+        price=_D(price),
+        currency="USD",
+        fee=_D("0"),
+        tax=_D("0"),
+        fx_rate=None,
     )
 
 
@@ -412,3 +437,115 @@ def test_decimal_only_no_float():
     assert isinstance(form.national_tax_krw, Decimal)
     assert isinstance(form.local_tax_krw, Decimal)
     assert isinstance(form.total_tax_krw, Decimal)
+
+
+# ---- FX 환율 주입 ----
+
+
+def test_apply_fx_rates_fills_missing():
+    """apply_fx_rates: fx_rate 없는 US 거래를 거래일 테이블에서 채운다."""
+    txs = [
+        _us_nofx(date(2025, 3, 3), "BUY", 10, "100"),
+        _us_nofx(date(2025, 9, 1), "SELL", 10, "150"),
+    ]
+    out = apply_fx_rates(txs, {"2025-03-03": "1450.50", "2025-09-01": "1390.00"})
+    assert out[0].fx_rate == _D("1450.50")
+    assert out[1].fx_rate == _D("1390.00")
+
+
+def test_apply_fx_rates_leaves_krw_and_existing():
+    """KRW 거래·이미 fx 있는 거래·테이블 미수록 날짜는 변경하지 않는다."""
+    txs = [
+        _kr(date(2025, 1, 10), "BUY", 100, "10000"),
+        _us(date(2025, 2, 1), "BUY", 10, "100", fx_rate="1300"),
+        _us_nofx(date(2025, 7, 7), "SELL", 5, "120"),
+    ]
+    out = apply_fx_rates(txs, {"2025-01-10": "9999"})
+    assert out[0].fx_rate is None  # KRW 그대로
+    assert out[1].fx_rate == _D("1300")  # 기존값 보존
+    assert out[2].fx_rate is None  # 테이블 미수록 → None 유지
+
+
+def test_missing_fx_dates_lists_unfilled():
+    """missing_fx_dates: fx 없는 US 거래일을 정렬·중복 제거해 반환."""
+    txs = [
+        _us_nofx(date(2025, 9, 1), "SELL", 1, "10"),
+        _us_nofx(date(2025, 3, 3), "BUY", 1, "10"),
+        _us_nofx(date(2025, 3, 3), "BUY", 2, "10"),
+        _us(date(2025, 5, 5), "BUY", 1, "10", fx_rate="1300"),
+        _kr(date(2025, 1, 1), "BUY", 1, "100"),
+    ]
+    assert missing_fx_dates(txs) == ["2025-03-03", "2025-09-01"]
+
+
+def test_main_missing_fx_exits_6(tmp_path, capsys):
+    """main: US 거래 fx 누락 + --fx-rates 미지정 → exit 6 + 누락 날짜 출력."""
+    txs = [_us_nofx(date(2025, 3, 3), "BUY", 10, "100")]
+    json_path = _write_json_fixture(txs, tmp_path)
+    exit_code = main(
+        [
+            "--from-json",
+            str(json_path),
+            "--tax-year",
+            "2025",
+            "--out-dir",
+            str(tmp_path / "out"),
+        ]
+    )
+    assert exit_code == 6
+    assert "2025-03-03" in capsys.readouterr().out
+
+
+def test_main_with_fx_rates_succeeds(tmp_path):
+    """main: --fx-rates 제공 시 US 거래 환산 후 정상 종료 + CSV 생성."""
+    txs = [
+        _us_nofx(date(2025, 3, 3), "BUY", 100, "100"),
+        _us_nofx(date(2025, 9, 1), "SELL", 100, "150"),
+    ]
+    json_path = _write_json_fixture(txs, tmp_path)
+    fx_path = tmp_path / "fx.json"
+    fx_path.write_text(
+        json.dumps({"2025-03-03": "1300", "2025-09-01": "1300"}),
+        encoding="utf-8",
+    )
+    out_dir = tmp_path / "out"
+    exit_code = main(
+        [
+            "--from-json",
+            str(json_path),
+            "--tax-year",
+            "2025",
+            "--fx-rates",
+            str(fx_path),
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+    assert exit_code == 0
+    assert (out_dir / "nts_summary_2025.csv").exists()
+
+
+def test_main_start_date_filters_input(tmp_path, capsys):
+    """--start-date 는 --from-json 입력도 필터 — cutoff 이전 거래(orphan 매도) 제외."""
+    txs = [
+        _kr(date(2024, 8, 1), "SELL", 100, "20000"),  # orphan 매도 (매수 없음)
+        _kr(date(2025, 2, 1), "BUY", 50, "30000"),
+        _kr(date(2025, 9, 1), "SELL", 50, "50000"),
+    ]
+    json_path = _write_json_fixture(txs, tmp_path)
+    out_dir = tmp_path / "out"
+    exit_code = main(
+        [
+            "--from-json",
+            str(json_path),
+            "--tax-year",
+            "2025",
+            "--start-date",
+            "2025-01-01",
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+    # orphan 2024 매도가 필터돼 InsufficientLotsError 미발생
+    assert exit_code == 0
+    assert "매도 건수: 1" in capsys.readouterr().out

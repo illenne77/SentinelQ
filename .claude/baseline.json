@@ -13,12 +13,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 165,
+    "pass": 175,
     "fail": 0,
     "skip": 0,
-    "total": 165,
+    "total": 175,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-15",
+    "measured_at": "2026-05-16",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -47,9 +47,9 @@
     "token_cache": "secrets/kis_token.json"
   },
   "kpi_gates": {
-    "_comment": "PREREG-0008 §5 KPI 게이트 - graduation 기준",
-    "G1": "본인 거래내역으로 2025 양도세 NTS 양식 30분 안에 출력",
-    "G2": "KIS+키움 합산 손익통산 정확 (수동 계산과 ±1원 일치)",
+    "_comment": "PREREG-0008 §5 KPI 게이트 - graduation 기준. G1·G2는 PREREG-0008-amendment-1 §5로 재정의됨 (정본). G3~G6 amendment-1 변경 없음.",
+    "G1": "본인 KIS 계정 인증 → 자동 fetch → 2025 양도세 신고 양식 출력 (전체 15분 이내) [amendment-1 §5]",
+    "G2": "KIS API fetch 결과와 본인 2025 실제 양도세 신고 결과 비교 (±100원 일치, truth value 1년치 한정) [amendment-1 §5]",
     "G3": "세제 한도 추적 정확 (IRP+연금+ISA, 증권사 공식 잔여한도와 일치)",
     "G4": "12월 손실 인식 권장 시뮬레이션 +100만원 절세 시나리오 1건+",
     "G5": "tests/ 커버리지 ≥ 80% (sentinelq/tax/ 모듈)",
@@ -139,6 +139,34 @@
       "fail": 0,
       "skip": 0,
       "note": "T007 엔드투엔드 양도세 신고 CLI 완료. sentinelq/reports/tax_report.py 신규 (run_pipeline/fetch_transactions/transactions_to_json/transactions_from_json/write_report/main). scripts/run_tax_report.py 얇은 shim. coverage 86% on tax_report.py. tests/test_tax_report.py 20건 신규 통과. G1 KPI 게이트 완성. feature/T007-tax-report-cli."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 166,
+      "fail": 0,
+      "skip": 0,
+      "note": "G1 실증 중 발견한 버그 3건 수정. (1) tax_report.py가 fetch 전 load_dotenv 미호출 → KIS_LIVE_APP_KEY 빈 헤더 → HTTP 500. (2) fetch_transactions 종료일을 max(과세연도말, 오늘)로. (3) kis_history 두 fetch 함수가 미체결 주문(체결수량 0)을 Transaction으로 emit → FIFO _validate ValueError. test_kis_history.py 0-수량 회귀 테스트 1건 추가 (166)."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 171,
+      "fail": 0,
+      "skip": 0,
+      "note": "G1 실증 — KIS inquire-ccnl이 환율 미제공 발견 (US 거래 12건 전부 fx_rate 누락). tax_report.py에 수동 기준환율 테이블 주입 추가 (apply_fx_rates/missing_fx_dates + --fx-rates CLI 인자, exit 6=환율 누락). test_tax_report.py FX 테스트 5건 추가 (171)."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 174,
+      "fail": 0,
+      "skip": 0,
+      "note": "G1 실증 — 견고성 2건. (1) kis_history _request가 URLError(연결 타임아웃)를 재시도+KisApiError(NETWORK) 래핑 — raw traceback 제거. (2) tax_report --start-date가 --from-json 입력도 필터 (cutoff 이전 거래 제외 → pre-tax-year orphan 매도 배제). 테스트 3건 추가 (174)."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 175,
+      "fail": 0,
+      "skip": 0,
+      "note": "G1 실증 — nts_form.py 라운딩 보완. 양도가액·취득가액을 원 단위 절사(ROUND_DOWN), 양도차익=절사 양도가액-절사 취득가액. 세금을 양식의 양도차익에서 직접 산출 (gain_summary 의존 제거, 양식 자체 정합). USD 환산 소수 제거. test_nts_form.py 4건 재작성+1건 추가 (175)."
     }
   ]
 }

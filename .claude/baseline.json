@@ -13,10 +13,10 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 145,
+    "pass": 165,
     "fail": 0,
     "skip": 0,
-    "total": 145,
+    "total": 165,
     "skip_tolerance": 3,
     "measured_at": "2026-05-15",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
@@ -132,6 +132,13 @@
       "fail": 0,
       "skip": 0,
       "note": "main 통합 머지 완료. T004(feature/T004-deduction) 병렬 브랜치 합류. sentinelq/tax/deduction.py + tests/test_deduction.py 추가. 전체 T001~T006 합산: 145 passed (회귀 0)."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 165,
+      "fail": 0,
+      "skip": 0,
+      "note": "T007 엔드투엔드 양도세 신고 CLI 완료. sentinelq/reports/tax_report.py 신규 (run_pipeline/fetch_transactions/transactions_to_json/transactions_from_json/write_report/main). scripts/run_tax_report.py 얇은 shim. coverage 86% on tax_report.py. tests/test_tax_report.py 20건 신규 통과. G1 KPI 게이트 완성. feature/T007-tax-report-cli."
     }
   ]
 }

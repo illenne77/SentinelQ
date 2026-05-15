@@ -15,10 +15,16 @@ import json
 import os
 import sys
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover
+    load_dotenv = None  # type: ignore[assignment]
 
 from sentinelq.adapters.kis_history import (
     KisApiError,
@@ -34,6 +40,8 @@ from sentinelq.reports.nts_form import (
     export_summary_csv,
 )
 from sentinelq.tax.capital_gains import calculate_year
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def run_pipeline(
@@ -67,10 +75,14 @@ def fetch_transactions(
     """KIS 해외 + 국내 거래내역 fetch + 합본 (T001 함수 호출).
 
     start_date None → date(tax_year, 1, 1).
+    종료일은 max(과세연도 말, 오늘) — 아래 주석 참조.
     """
     if start_date is None:
         start_date = date(tax_year, 1, 1)
-    end_date = date(tax_year, 12, 31)
+    # 종료일을 오늘까지 둔다 — 과세연도 밖 거래는 build_nts_form의 sell_date.year
+    # 필터가 제외하므로 안전. KIS fetch는 probe(decisions/T001)가 종료일=오늘
+    # 윈도로 검증했다.
+    end_date = max(date(tax_year, 12, 31), date.today())
     overseas = inquire_overseas_period_trans(
         start_date,
         end_date,
@@ -86,6 +98,37 @@ def fetch_transactions(
         confirm_live=confirm_live,
     )
     return overseas + domestic
+
+
+def apply_fx_rates(
+    transactions: Iterable[Transaction],
+    fx_table: dict[str, str],
+) -> list[Transaction]:
+    """USD(해외) 거래의 누락된 fx_rate를 거래일 기준환율 테이블에서 채운다.
+
+    fx_table: {거래일 ISO 문자열: 환율 문자열}. 이미 fx_rate가 있거나 KRW
+    거래는 변경하지 않는다. 테이블에 없거나 빈 값인 날짜는 fx_rate=None 유지.
+    KIS 거래내역 endpoint가 환율을 제공하지 않아 별도 주입이 필요하다.
+    """
+    out: list[Transaction] = []
+    for tx in transactions:
+        if tx.market == "US" and tx.fx_rate is None:
+            rate = fx_table.get(tx.trade_date.isoformat())
+            if rate is not None and str(rate) != "":
+                tx = replace(tx, fx_rate=Decimal(str(rate)))
+        out.append(tx)
+    return out
+
+
+def missing_fx_dates(transactions: Iterable[Transaction]) -> list[str]:
+    """fx_rate가 없는 USD(해외) 거래의 거래일(ISO) 목록 — 정렬·중복 제거."""
+    return sorted(
+        {
+            tx.trade_date.isoformat()
+            for tx in transactions
+            if tx.market == "US" and tx.fx_rate is None
+        }
+    )
 
 
 def _tx_to_dict(tx: Transaction) -> dict[str, Any]:
@@ -171,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--start-date",
         default=None,
-        help="fetch 시작일 YYYY-MM-DD (FIFO 정확성용, 기본: tax_year-01-01)",
+        help="거래 시작일 YYYY-MM-DD — fetch 범위이자 입력 거래 필터 (이 날짜 이전 거래 제외)",
     )
     parser.add_argument(
         "--env",
@@ -199,6 +242,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="fetch 결과 JSON 저장 경로 (재실행 캐시용)",
     )
+    parser.add_argument(
+        "--fx-rates",
+        default=None,
+        help="USD 거래일별 기준환율 JSON 파일 ({날짜: 환율})",
+    )
 
     args = parser.parse_args(argv)
     tax_year = args.tax_year if args.tax_year is not None else (date.today().year - 1)
@@ -212,6 +260,9 @@ def main(argv: list[str] | None = None) -> int:
             return 5
         transactions: list[Transaction] = transactions_from_json(text)
     else:
+        # KIS fetch는 KIS_LIVE_APP_KEY 등을 os.environ에서 읽는다 — .env 로드 필수.
+        if load_dotenv is not None:
+            load_dotenv(ROOT / ".env", override=True)
         if args.env == "live":
             live_allow = os.environ.get("SENTINELQ_LIVE_ALLOW", "") == "1"
             if not args.confirm_live or not live_allow:
@@ -236,8 +287,31 @@ def main(argv: list[str] | None = None) -> int:
             print(f"KIS API 오류: {exc}", file=sys.stderr)
             return 3
 
+    if args.start_date is not None:
+        cutoff = date.fromisoformat(args.start_date)
+        transactions = [tx for tx in transactions if tx.trade_date >= cutoff]
+
     if args.dump_json is not None:
         Path(args.dump_json).write_text(transactions_to_json(transactions), encoding="utf-8")
+
+    if args.fx_rates is not None:
+        fx_path = Path(args.fx_rates)
+        try:
+            fx_table = json.loads(fx_path.read_text(encoding="utf-8"))
+        except OSError as exc:
+            print(f"FX 테이블 파일 오류: {exc}", file=sys.stderr)
+            return 5
+        transactions = apply_fx_rates(transactions, fx_table)
+
+    missing = missing_fx_dates(transactions)
+    if missing:
+        print(
+            "USD 거래의 KRW 환산에 기준환율이 필요합니다. 아래 날짜의 환율을 "
+            "JSON으로 작성해 --fx-rates 로 전달하세요:",
+            file=sys.stderr,
+        )
+        print(json.dumps({d: "" for d in missing}, indent=2, ensure_ascii=False))
+        return 6
 
     try:
         form = run_pipeline(transactions, tax_year)

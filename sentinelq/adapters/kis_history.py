@@ -251,6 +251,14 @@ def _request(
                 backoff *= 2
                 continue
             raise KisApiError(str(exc.code), str(exc.reason), tr_id=tr_id) from exc
+        except urllib.error.URLError as exc:
+            # 연결 타임아웃·DNS·연결거부 — transient로 보고 재시도, 소진 시 KisApiError
+            if attempt < max_retries - 1:
+                last_exc = exc
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            raise KisApiError("NETWORK", f"KIS 연결 실패: {exc.reason}", tr_id=tr_id) from exc
     if isinstance(last_exc, Exception):
         raise last_exc
     raise KisApiError("?", "max_retries exhausted", tr_id=tr_id)
@@ -277,7 +285,7 @@ def inquire_overseas_period_trans(
     exchange: Literal["NASD", "NYSE", "AMEX", "ALL"] = "ALL",
     confirm_live: bool = False,
 ) -> list[Transaction]:
-    """해외주식 기간별 매매내역 조회 (페이지네이션 자동)."""
+    """해외주식 기간별 매매내역 조회 (페이지네이션 자동). 체결수량 0(미체결) 제외."""
     cano, prdt = _account_parts(account)
     tr_id = TR_OVERSEAS_TRANS[env]
     results: list[Transaction] = []
@@ -308,7 +316,10 @@ def inquire_overseas_period_trans(
             confirm_live=confirm_live,
         )
         for row in payload.get("output", []) or []:
-            results.append(_parse_overseas_row(row))
+            tx = _parse_overseas_row(row)
+            if tx.quantity <= 0:
+                continue  # 미체결·취소 주문 (체결수량 0) — 양도세 대상 아님
+            results.append(tx)
         ctx_fk = (payload.get("ctx_area_fk200") or "").strip()
         ctx_nk = (payload.get("ctx_area_nk200") or "").strip()
         if not ctx_nk:
@@ -347,7 +358,7 @@ def inquire_domestic_daily_trans(
     account: str | None = None,
     confirm_live: bool = False,
 ) -> list[Transaction]:
-    """국내주식 일별 주문체결 조회 (90일 한도 자동 분할 + 중복 제거)."""
+    """국내주식 일별 주문체결 조회 (90일 한도 자동 분할 + 중복 제거). 체결수량 0 제외."""
     cano, prdt = _account_parts(account)
     tr_id = TR_DOMESTIC_TRANS[env]
     results: list[Transaction] = []
@@ -388,7 +399,10 @@ def inquire_domestic_daily_trans(
                 if key in seen_ids:
                     continue
                 seen_ids.add(key)
-                results.append(_parse_domestic_row(row))
+                tx = _parse_domestic_row(row)
+                if tx.quantity <= 0:
+                    continue  # 미체결·취소 주문 (체결수량 0) — 양도세 대상 아님
+                results.append(tx)
             ctx_fk = (payload.get("ctx_area_fk100") or "").strip()
             ctx_nk = (payload.get("ctx_area_nk100") or "").strip()
             if not ctx_nk:

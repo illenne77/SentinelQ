@@ -114,6 +114,37 @@ class TestInquireOverseasPeriodTrans:
         assert result[0].fx_rate == Decimal("1430.50")
         assert result[1].side == "SELL"
 
+    def test_zero_quantity_rows_skipped(self, monkeypatch, mock_token, mock_account):
+        """미체결·취소 주문(체결수량 0)은 Transaction으로 반환하지 않는다."""
+        payload = {
+            "rt_cd": "0",
+            "ctx_area_fk200": "",
+            "ctx_area_nk200": "",
+            "output": [
+                {
+                    "ord_dt": "20250310",
+                    "pdno": "AAPL",
+                    "sll_buy_dvsn_cd": "02",
+                    "ft_ccld_qty": "0",
+                    "ft_ccld_unpr3": "180.00",
+                    "erlm_exrt": "1400",
+                },
+                {
+                    "ord_dt": "20250311",
+                    "pdno": "MSFT",
+                    "sll_buy_dvsn_cd": "02",
+                    "ft_ccld_qty": "5",
+                    "ft_ccld_unpr3": "400.00",
+                    "erlm_exrt": "1400",
+                },
+            ],
+        }
+        _patch_urlopen(monkeypatch, json.dumps(payload).encode("utf-8"))
+        result = inquire_overseas_period_trans(date(2025, 3, 1), date(2025, 3, 31))
+        assert len(result) == 1
+        assert result[0].ticker == "MSFT"
+        assert result[0].quantity == 5
+
 
 # ---- 국내주식 거래내역 ----
 
@@ -224,6 +255,36 @@ class TestRateLimitBackoff:
         _patch_urlopen(monkeypatch, [rate_limit, rate_limit, success])
         result = inquire_overseas_period_trans(date(2025, 1, 1), date(2025, 1, 31))
         assert result == []
+
+    def test_url_error_retries_then_succeeds(
+        self, monkeypatch, mock_token, mock_account, fast_sleep
+    ):
+        """연결 오류(URLError)는 재시도하고 이후 성공 시 정상 반환."""
+        success = _load_fixture("kis_empty_response.json")
+        calls: list[int] = []
+
+        def flaky(*args, **kwargs):
+            calls.append(1)
+            if len(calls) < 3:
+                raise kis_history.urllib.error.URLError("timed out")
+            return _FakeResp(success)
+
+        monkeypatch.setattr(kis_history.urllib.request, "urlopen", flaky)
+        result = inquire_overseas_period_trans(date(2025, 1, 1), date(2025, 1, 31))
+        assert result == []
+
+    def test_url_error_exhausted_raises_kis_api_error(
+        self, monkeypatch, mock_token, mock_account, fast_sleep
+    ):
+        """연결 오류가 재시도 끝까지 지속되면 KisApiError(code=NETWORK)."""
+
+        def always_timeout(*args, **kwargs):
+            raise kis_history.urllib.error.URLError("timed out")
+
+        monkeypatch.setattr(kis_history.urllib.request, "urlopen", always_timeout)
+        with pytest.raises(KisApiError) as exc_info:
+            inquire_overseas_period_trans(date(2025, 1, 1), date(2025, 1, 31))
+        assert exc_info.value.code == "NETWORK"
 
 
 # ---- 보안 (PREREG-0008 §3 보안 검사) ----

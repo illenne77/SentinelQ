@@ -13,12 +13,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 67,
+    "pass": 84,
     "fail": 0,
     "skip": 0,
-    "total": 67,
+    "total": 84,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-13",
+    "measured_at": "2026-05-15",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -97,6 +97,13 @@
       "fail": 0,
       "skip": 0,
       "note": "T002 FIFO Tax Lot Tracker 완료. sentinelq/portfolio/tax_lots.py 신규 (Lot/LotConsumption/SaleRealization/TaxLotLedger, NTS 룰: 매수→취득가액 가산, 매도→양도가액 차감, USD 거래는 자기 거래일 fx_rate 환산). tests/test_tax_lots.py 21건 신규 통과. coverage 99% on tax_lots.py. feature/T002-tax-lots."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 84,
+      "fail": 0,
+      "skip": 0,
+      "note": "T003 Capital Gains Calculator 완료. sentinelq/tax/__init__.py + sentinelq/tax/capital_gains.py 신규 (TaxYearRules/MarketBreakdown/TaxYearSummary + calculate_year + calculate_all). KR 룰: 250만 공제 + 22% 합산 + ROUND_DOWN, 이월공제 불가. tests/test_capital_gains.py 17건 신규 통과. coverage 100% on tax/capital_gains.py. feature/T003-capital-gains."
     }
   ]
 }

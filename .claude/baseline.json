@@ -13,10 +13,10 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 84,
+    "pass": 103,
     "fail": 0,
     "skip": 0,
-    "total": 84,
+    "total": 103,
     "skip_tolerance": 3,
     "measured_at": "2026-05-15",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
@@ -104,6 +104,13 @@
       "fail": 0,
       "skip": 0,
       "note": "T003 Capital Gains Calculator 완료. sentinelq/tax/__init__.py + sentinelq/tax/capital_gains.py 신규 (TaxYearRules/MarketBreakdown/TaxYearSummary + calculate_year + calculate_all). KR 룰: 250만 공제 + 22% 합산 + ROUND_DOWN, 이월공제 불가. tests/test_capital_gains.py 17건 신규 통과. coverage 100% on tax/capital_gains.py. feature/T003-capital-gains."
+    },
+    {
+      "date": "2026-05-15",
+      "pass": 103,
+      "fail": 0,
+      "skip": 0,
+      "note": "T004 세제 우대 한도 추적 완료. sentinelq/tax/deduction.py 신규 (DeductionLimits/AccountType/ContributionRecord/PensionCreditResult/ISAStatusResult/DeductionYearSummary + calculate_deduction). KR 룰: 연금저축 6백만/IRP 합산 9백만 한도, 세액공제율 16.5%/13.2%, ISA 연간·5년 누적 한도. tests/test_deduction.py 19건 신규 통과. coverage 100% on tax/deduction.py. feature/T004-deduction."
     }
   ]
 }

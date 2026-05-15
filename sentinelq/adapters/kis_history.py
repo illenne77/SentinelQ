@@ -264,13 +264,29 @@ def _request(
     raise KisApiError("?", "max_retries exhausted", tr_id=tr_id)
 
 
-def _account_parts(account: str | None) -> tuple[str, str]:
-    """``"XXXXXXXX-YY"`` → ``("XXXXXXXX", "YY")``."""
+def _account_parts(account: str | None, env: Env = "paper") -> tuple[str, str]:
+    """``"XXXXXXXX-YY"`` → ``("XXXXXXXX", "YY")``.
+
+    우선순위:
+      1. account 인수 (XXXXXXXX-YY 형식)
+      2. KIS_ACCOUNT 환경변수 (XXXXXXXX-YY 형식)
+      3. KIS_{LIVE|PAPER}_ACCOUNT_NO + KIS_{LIVE|PAPER}_ACCOUNT_PRDT 조합
+    """
     raw = account or os.environ.get("KIS_ACCOUNT", "")
+    if not raw:
+        prefix = "KIS_LIVE_" if env == "live" else "KIS_PAPER_"
+        no = os.environ.get(f"{prefix}ACCOUNT_NO", "")
+        prdt = os.environ.get(f"{prefix}ACCOUNT_PRDT", "")
+        if no and prdt:
+            raw = f"{no}-{prdt}"
     if "-" not in raw:
-        raise ValueError(f"KIS_ACCOUNT must be 'XXXXXXXX-YY' format, got: {raw!r}")
-    cano, prdt = raw.split("-", 1)
-    return cano, prdt
+        raise ValueError(
+            f"계좌번호를 찾을 수 없습니다. "
+            f".env에 KIS_ACCOUNT=XXXXXXXX-YY 또는 "
+            f"KIS_LIVE_ACCOUNT_NO + KIS_LIVE_ACCOUNT_PRDT 를 설정하세요. got: {raw!r}"
+        )
+    cano, prdt_code = raw.split("-", 1)
+    return cano, prdt_code
 
 
 # ---- 공개 API: 거래내역 조회 ----
@@ -286,7 +302,7 @@ def inquire_overseas_period_trans(
     confirm_live: bool = False,
 ) -> list[Transaction]:
     """해외주식 기간별 매매내역 조회 (페이지네이션 자동). 체결수량 0(미체결) 제외."""
-    cano, prdt = _account_parts(account)
+    cano, prdt = _account_parts(account, env)
     tr_id = TR_OVERSEAS_TRANS[env]
     results: list[Transaction] = []
     ctx_fk = ""
@@ -359,7 +375,7 @@ def inquire_domestic_daily_trans(
     confirm_live: bool = False,
 ) -> list[Transaction]:
     """국내주식 일별 주문체결 조회 (90일 한도 자동 분할 + 중복 제거). 체결수량 0 제외."""
-    cano, prdt = _account_parts(account)
+    cano, prdt = _account_parts(account, env)
     tr_id = TR_DOMESTIC_TRANS[env]
     results: list[Transaction] = []
     seen_ids: set[str] = set()
@@ -440,7 +456,7 @@ def inquire_period_profit(
     confirm_live: bool = False,
 ) -> list[ProfitRecord]:
     """기간 손익 조회 (양도세 손익통산·12월 손실 인식 권장에 사용)."""
-    cano, prdt = _account_parts(account)
+    cano, prdt = _account_parts(account, env)
     if market == "overseas":
         tr_id = TR_OVERSEAS_PROFIT[env]
         path = PATH_OVERSEAS_PROFIT

@@ -75,13 +75,12 @@ def _real(
 
 
 def test_basic_form_ac1_national_local_total():
-    """AC1: gain=1천만, taxable=750만 → national=1,500,000, local=150,000, total=1,650,000."""
-    summary = _summary(
-        taxable_base="7500000",
-        capital_gains_tax="1650000",
-    )
-    form = build_nts_form(summary, [_real()])
+    """AC1: 양도차익 1천만 → 과세표준 750만 → national=1,500,000, local=150,000, total=1,650,000."""
+    summary = _summary(capital_gains_tax="1650000")
+    # 양도차익 = 12,500,000 - 2,500,000 = 10,000,000 → 과세표준 = 1천만 - 250만 = 750만
+    form = build_nts_form(summary, [_real(proceeds="12500000", acq_cost="2500000")])
 
+    assert form.taxable_base_krw == Decimal("7500000")
     assert form.national_tax_krw == Decimal("1500000")
     assert form.local_tax_krw == Decimal("150000")
     assert form.total_tax_krw == Decimal("1650000")
@@ -168,7 +167,7 @@ def test_realizations_filtered_by_tax_year_ac5():
 
 
 def test_empty_realizations_returns_zero_form_ac6():
-    """AC6: 빈 realizations → sale_count=0, totals=0, by_market=(), 세금은 summary 기준."""
+    """AC6: 빈 realizations → sale_count=0, totals=0, by_market=(), 세금 0."""
     summary = _summary(taxable_base="0", capital_gains_tax="0")
     form = build_nts_form(summary, [])
 
@@ -296,7 +295,9 @@ def test_csv_no_float_repr_ac11():
 
 def test_t003_cross_reference_within_2_won_ac12():
     """AC12: |t003_combined_tax_krw - total_tax_krw| ≤ 2."""
-    form = build_nts_form(_summary(), [_real()])
+    # 양도차익 1천만 → 과세표준 750만 → NTS 분리 세액 1,650,000 = T003 22% 세액
+    summary = _summary(capital_gains_tax="1650000")
+    form = build_nts_form(summary, [_real(proceeds="12500000", acq_cost="2500000")])
     diff = abs(form.t003_combined_tax_krw - form.total_tax_krw)
     assert diff <= Decimal("2"), f"차이={diff} 허용범위 초과"
 
@@ -337,18 +338,28 @@ def test_total_tax_equals_national_plus_local():
 
 def test_round_down_applied_independently():
     """national과 local 각각 ROUND_DOWN — 소수점 버림 확인."""
-    # taxable_base=1234567 → national=floor(1234567*0.20)=246913, local=floor(246913*0.10)=24691
-    summary = _summary(
-        taxable_base="1234567",
-        capital_gains_tax="271604",  # 22% approximate
-    )
-    form = build_nts_form(summary, [])
+    # 양도차익 3,734,567 → 과세표준 1,234,567
+    # national=floor(1234567*0.20)=246913, local=floor(246913*0.10)=24691
+    form = build_nts_form(_summary(), [_real(proceeds="3734567", acq_cost="0")])
 
-    expected_national = Decimal("246913")  # floor(1234567 * 0.20)
-    expected_local = Decimal("24691")  # floor(246913 * 0.10)
-    assert form.national_tax_krw == expected_national
-    assert form.local_tax_krw == expected_local
-    assert form.total_tax_krw == expected_national + expected_local
+    assert form.taxable_base_krw == Decimal("1234567")
+    assert form.national_tax_krw == Decimal("246913")
+    assert form.local_tax_krw == Decimal("24691")
+    assert form.total_tax_krw == Decimal("271604")
+
+
+def test_sub_won_amounts_truncated_to_won():
+    """원 미만 소수(USD 환산 등)는 양식에서 원 단위 절사."""
+    real = _real(proceeds="6191218.2470000000", acq_cost="2500000.9")
+    form = build_nts_form(_summary(), [real])
+
+    line = form.sale_lines[0]
+    assert line.proceeds_krw == Decimal("6191218")  # 절사
+    assert line.acquisition_cost_krw == Decimal("2500000")  # 절사
+    assert line.realized_gain_krw == Decimal("3691218")  # 6191218 - 2500000
+    assert form.total_realized_gain_krw == Decimal("3691218")
+    # 원 미만 소수 없음 (정수)
+    assert form.total_realized_gain_krw == form.total_realized_gain_krw.to_integral_value()
 
 
 # ---- Decimal-only (float 미사용) ------------------------------------------
@@ -374,16 +385,17 @@ def test_decimal_only_no_float_in_pipeline():
 
 
 def test_caller_inconsistency_silently_accepted():
-    """E12: realizations sum ≠ gain_summary.total_realized_gain_krw — 예외 없음.
+    """E12: gain_summary 가 realizations 와 불일치해도 예외 없음.
 
-    라인은 realizations 기준, 세금은 gain_summary.taxable_base_krw 기준.
+    양식의 금액·세금은 모두 realizations 기준으로 자체 산출하고, gain_summary
+    는 tax_year·기본공제·교차검증값에만 쓴다.
     """
-    summary = _summary(total_gain="99999999", taxable_base="0", capital_gains_tax="0")
-    real = _real(realized="1000")  # 불일치 — 예외 없어야 함
-    form = build_nts_form(summary, [real])
+    summary = _summary(total_gain="99999999", taxable_base="88888888", capital_gains_tax="0")
+    form = build_nts_form(summary, [_real()])  # proceeds 1천만, cost 9백만 → 양도차익 1백만
 
-    assert form.total_realized_gain_krw == Decimal("1000")  # realizations 기준
-    assert form.national_tax_krw == Decimal("0")  # taxable_base 기준
+    assert form.total_realized_gain_krw == Decimal("1000000")  # realizations 기준
+    assert form.taxable_base_krw == Decimal("0")  # 1백만 < 250만 공제 → 0
+    assert form.national_tax_krw == Decimal("0")
 
 
 # ---- by_market market asc 정렬 -------------------------------------------

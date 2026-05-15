@@ -13,12 +13,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 174,
+    "pass": 175,
     "fail": 0,
     "skip": 0,
-    "total": 174,
+    "total": 175,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-15",
+    "measured_at": "2026-05-16",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -160,6 +160,13 @@
       "fail": 0,
       "skip": 0,
       "note": "G1 실증 — 견고성 2건. (1) kis_history _request가 URLError(연결 타임아웃)를 재시도+KisApiError(NETWORK) 래핑 — raw traceback 제거. (2) tax_report --start-date가 --from-json 입력도 필터 (cutoff 이전 거래 제외 → pre-tax-year orphan 매도 배제). 테스트 3건 추가 (174)."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 175,
+      "fail": 0,
+      "skip": 0,
+      "note": "G1 실증 — nts_form.py 라운딩 보완. 양도가액·취득가액을 원 단위 절사(ROUND_DOWN), 양도차익=절사 양도가액-절사 취득가액. 세금을 양식의 양도차익에서 직접 산출 (gain_summary 의존 제거, 양식 자체 정합). USD 환산 소수 제거. test_nts_form.py 4건 재작성+1건 추가 (175)."
     }
   ]
 }

@@ -5,6 +5,7 @@
     "mandate": "KR Investor Tools (양도세 + DART 공시)",
     "active_prereg": "PREREG-0008-tax-tool",
     "active_prereg_2": "PREREG-0009-asset-tracker",
+    "active_prereg_3": "PREREG-0010-rebalancing",
     "active_amendments": ["PREREG-0008-amendment-1", "PREREG-0008-amendment-2"]
   },
   "python": {
@@ -14,12 +15,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 306,
+    "pass": 344,
     "fail": 0,
     "skip": 0,
-    "total": 306,
+    "total": 344,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-16 (Step 2)",
+    "measured_at": "2026-05-16 (Step 3)",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -189,6 +190,13 @@
       "fail": 0,
       "skip": 0,
       "note": "Step 2 포트폴리오 대시보드 완료. T013 KIS 잔고 조회 어댑터 (HoldingRecord + inquire_domestic_balance + inquire_overseas_balance, 10 tests), T014 세후 수익률 계산기 (portfolio/after_tax.py, AfterTaxPortfolio/AfterTaxPosition + calculate_after_tax, 14 tests), T015 포트폴리오 대시보드 리포트 (reports/portfolio_report.py, 14 tests), T016 포트폴리오 대시보드 CLI (scripts/run_portfolio.py). PREREG-0009-asset-tracker 작성. 총 306 passed (회귀 0). feature/T013-portfolio-balance 브랜치."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 344,
+      "fail": 0,
+      "skip": 0,
+      "note": "Step 3 패시브 리밸런싱 완료. T017 리밸런싱 계산기 (portfolio/rebalance.py, TargetAllocation/MarketAllocation/RebalancePlan + calculate_rebalance, 세금 안분 포함, 20 tests), T018 리밸런싱 리포트 (reports/rebalance_report.py, 18 tests), T019 리밸런싱 CLI (scripts/run_rebalance.py). PREREG-0010-rebalancing 작성. 총 344 passed (회귀 0). feature/T017-rebalancing 브랜치."
     }
   ]
 }

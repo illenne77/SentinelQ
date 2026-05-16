@@ -22,6 +22,7 @@ and stdlib. Install once:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -39,9 +40,14 @@ SECRETS_DIR = ROOT / "secrets"
 SECRETS_DIR.mkdir(exist_ok=True)
 
 # ---- Known-leaked secrets — refuse to issue tokens for these ----
-LEAKED_PAPER_APP_KEYS = {
-    "PS79nLHuwOJVexe9HxmHa62OlGa5DxwJ30rn",   # exposed in chat 2026-05-08
+# SHA-256 hashes so the raw leaked key is not republished in this public repo.
+LEAKED_APP_KEY_HASHES = {
+    "079c268fe0f2324989f83d54bb3bbdb5a6a4523801a3d66b9d2b5bb87698c8b5",  # paper key exposed 2026-05-08
 }
+
+
+def _is_leaked_app_key(app_key: str) -> bool:
+    return hashlib.sha256(app_key.encode("utf-8")).hexdigest() in LEAKED_APP_KEY_HASHES
 
 
 def _redact(s: str, keep: int = 4) -> str:
@@ -76,7 +82,7 @@ def _load_creds(env: str) -> tuple[str, str, str]:
     ] if not v]
     if missing:
         sys.exit(f"ERROR: missing in .env: {', '.join(missing)}")
-    if app_key in LEAKED_PAPER_APP_KEYS:
+    if _is_leaked_app_key(app_key):
         sys.exit(
             f"REFUSED: app_key {_redact(app_key)} is a known LEAKED key.\n"
             "Re-issue a fresh key from the KIS portal before using this tool."

@@ -1,170 +1,122 @@
 # SentinelQ
 
-**Status**: Active — Phase 3 (KR Investor Tools) — re-activated 2026-05-11
+**KR 개인 투자자를 위한 세금·공시 자동화 도구.** 해외주식 양도세 신고, 세후
+수익률 추적, DART 공시 모니터링을 한 곳에서 처리합니다.
 
-## 웹 앱 (Streamlit)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Tests](https://img.shields.io/badge/tests-421%20passed-brightgreen)
+
+> 매년 5월 해외주식 양도세를 증권사별로 따로 계산하고, 손익통산을 손으로
+> 맞추는 게 번거롭다면 — 이 도구가 그 작업을 자동화합니다.
+
+---
+
+## 무엇을 하나
+
+| 기능 | 설명 |
+|---|---|
+| 💰 **양도세 계산기** | 여러 증권사 거래내역 CSV를 통합 → FIFO 손익통산 + 250만원 기본공제 + 22% 세율 자동 계산 → 국세청(NTS) 신고 양식 출력 |
+| 📈 **포트폴리오 대시보드** | 보유 종목의 세전·세후 수익률 비교, 예상 양도세, 잔여 기본공제 추적 |
+| ⚖️ **리밸런싱 계산기** | 목표 자산 배분 대비 이탈도 계산 + 매도 시 발생 세금 안분 |
+| 🔔 **DART 공시 모니터링** | 보유 종목의 신규 공시(유상증자·합병·상장폐지 등)를 조회하고 텔레그램으로 알림 |
+
+알파 발견·자동매매·시장 타이밍 기능은 **없습니다.** 이 도구는 세금·공시 등
+반복 사무 작업의 자동화만 다룹니다.
+
+## 스크린샷
+
+<!-- docs/screenshots/ 에 이미지 추가 후 아래 경로 연결 -->
+<!-- ![양도세 계산기](docs/screenshots/tax-calculator.png) -->
+_(스크린샷 추가 예정)_
+
+## 빠른 시작
+
+```bash
+# 1. 클론
+git clone https://github.com/illenne77/SentinelQ.git
+cd SentinelQ
+
+# 2. 설치 (Python 3.11+)
+python -m venv .venv
+.venv/Scripts/Activate.ps1        # Windows PowerShell
+pip install -e ".[ui]"
+
+# 3. 웹 앱 실행
+streamlit run streamlit_app.py --server.address 127.0.0.1
+```
+
+브라우저에서 `http://127.0.0.1:8501` 접속.
+
+> Windows 11에서 `--server.address localhost`는 IPv6(::1)로 바인딩되어
+> 접속이 안 될 수 있습니다. `127.0.0.1` 또는 `0.0.0.0`을 사용하세요.
+
+## 지원 증권사
+
+| 증권사 | 거래내역 CSV | 잔고 자동 조회 |
+|---|---|---|
+| 키움증권 | ✅ | — |
+| 미래에셋증권 | ✅ | — |
+| 한국투자증권(KIS) | ✅ | ✅ (OpenAPI) |
+| NH·삼성·기타 | 🙏 기여 환영 | — |
+
+다른 증권사 CSV 파서 추가는 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요.
+
+## API 키 설정 (선택)
+
+DART 공시·KIS 잔고 조회·텔레그램 알림 기능은 API 키가 필요합니다. 양도세
+계산기와 리밸런싱은 키 없이 동작합니다.
+
+`.env` 파일을 만들어 설정합니다 ([.env.example](.env.example) 참고):
+
+```
+DART_API_KEY=...          # DART 공시 (opendart.fss.or.kr 무료 발급)
+KIS_APP_KEY=...           # KIS 잔고 자동 조회 (선택)
+KIS_APP_SECRET=...
+TELEGRAM_BOT_TOKEN=...    # 공시 알림 (선택)
+TELEGRAM_CHAT_ID=...
+```
+
+## CLI 도구
+
+웹 앱 없이 명령줄에서도 사용할 수 있습니다.
+
+```bash
+python scripts/run_tax_report.py --year 2025          # 양도세 신고서
+python scripts/run_portfolio.py                       # 포트폴리오 세후 수익률
+python scripts/run_rebalance.py --target KR=30 US=70  # 리밸런싱 계획
+python scripts/run_dart_monitor.py --days 7 --notify  # DART 공시 + 텔레그램 알림
+```
+
+## 면책 (Disclaimer)
+
+이 도구는 **참고용 계산기**입니다. 출력된 양도세 금액은 신고를 돕기 위한
+추정치이며, 법적 효력이 있는 세무 자문이 아닙니다. 실제 신고 전 반드시
+국세청 홈택스 또는 세무 전문가를 통해 확인하시기 바랍니다. 이 소프트웨어
+사용으로 발생한 어떤 손해에 대해서도 작성자는 책임지지 않습니다(MIT License).
+
+## 기여
+
+증권사 CSV 파서 추가, 버그 제보, 세법 엣지케이스 개선 등 기여를
+환영합니다. [CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요.
+
+## 개발
 
 ```bash
 pip install -e ".[dev,ui]"
-streamlit run streamlit_app.py --server.address 0.0.0.0
+pytest tests/ -v          # 테스트 (421 passed)
+ruff check sentinelq/     # 린트
 ```
 
-| 페이지 | 기능 |
-|---|---|
-| Home | 환경변수 설정 현황 |
-| 💰 양도세 계산기 | 키움·미래에셋 CSV 업로드 → NTS 양식 + CSV 다운로드 |
-| 📈 포트폴리오 대시보드 | 보유 종목 입력 → 세전·세후 수익률 비교 |
-| ⚖️ 리밸런싱 계산기 | 목표 배분 설정 → 이탈도·세금 안분 계획 |
-| 🔔 DART 공시 | 종목코드 입력 → DART 신규 공시 조회 |
+## 프로젝트 히스토리
 
-### Streamlit Cloud 배포
-
-1. [share.streamlit.io](https://share.streamlit.io) 접속 → GitHub 계정 연동
-2. **Repository**: `illenne77/SentinelQ` / **Branch**: `main` / **Main file**: `streamlit_app.py`
-3. **Settings → Secrets**에 아래 항목 추가 (`.streamlit/secrets.toml.example` 참고):
-   ```toml
-   DART_API_KEY = "..."          # 필수 (DART 공시)
-   KIS_APP_KEY = "..."           # 선택 (포트폴리오 자동 조회)
-   KIS_APP_SECRET = "..."
-   KIS_ACCOUNT = "..."
-   TELEGRAM_BOT_TOKEN = "..."    # 선택 (알림)
-   TELEGRAM_CHAT_ID = "..."
-   ```
-4. **Deploy** 클릭
-
-### CLI 도구
-
-```bash
-# 양도세 신고서
-python scripts/run_tax_report.py --year 2025
-
-# 포트폴리오 세후 수익률
-python scripts/run_portfolio.py
-
-# 리밸런싱 계획
-python scripts/run_rebalance.py --target KR=30 US=70
-
-# DART 공시 모니터링
-python scripts/run_dart_monitor.py --days 7 --notify
-```
-
-KR 개인 투자자를 위한 자동화 도구 프로젝트.
-재출범 결정과 mandate는 [`docs/adr/ADR-0013-phase3-kr-investor-tools.md`](docs/adr/ADR-0013-phase3-kr-investor-tools.md) 참조.
-
-## 현재 mandate (Phase 3)
-
-KR 개인 투자자가 매년·매월 반복적으로 수동 처리하는 **양도세 신고·세제
-한도 관리·DART 공시 모니터링**을 자동화하는 도구를 본인 사용 + 외부
-공개 형태로 개발한다.
-
-**NOT mandate**: 알파 발견·자동매매·시장 타이밍·수익률 향상. 이 영역은
-ADR-0011·0012에 의해 종결되었다.
-
-## Phase 3 도구 (개발 중)
-
-| 도구 | 기능 | 상태 | 인프라 재사용 |
-|---|---|---|---:|
-| **A. 양도세 + 세제 한도 자동 계산기** | 다중 증권사 거래내역 통합, 손익통산 + 250만원 공제 + 22% 세율 자동, IRP+연금+ISA 한도·세액공제 추적, 12월 손실 인식 권장 | Phase 1 (4~6주) | 70% |
-| **B. DART 공시 모니터링 + 알림 봇** | 보유 종목 공시 즉시 폴링, 텔레그램·이메일 알림, 공시 유형 필터 | Phase 2 (3~4주, G1·G2·G3 통과 후) | 80% |
-
-## 살아남는 자산 (Phase 3에서 재사용)
-
-```
-docs/adr/                13건의 학습 기록 (ADR-0001 ~ ADR-0013)
-docs/preregistration/    PREREG 워크플로 템플릿 (Phase 3 PREREG-0008 진행)
-sentinelq/portfolio/     Fill-driven 포트폴리오 부기 (A 도구 70% 재사용)
-sentinelq/risk/          7-gate 사전거래 위험 엔진 (Phase 4 이상에서 사용)
-sentinelq/ports/         Hexagonal port 추상화 (A·B 도구 어댑터 추가)
-sentinelq/adapters/      KIS REST 어댑터 (A 도구 거래내역 fetch)
-sentinelq/research/      Walk-forward 검증 (Phase 3 미사용, 보존)
-scripts/dart_*           DART 펀더멘털 백필 (B 도구 100% 재사용)
-scripts/kis_*            KIS 데이터·토큰 (A·B 도구 부분 재사용)
-data/cache/dart/         KR 펀더멘털 데이터셋 (B 도구 보조)
-```
-
-## 프로젝트 사이클 history
-
-### Phase 0~2: 알파 사냥 (2025-11 ~ 2026-05) — TERMINATED
-
-6개월간 KR 주식 시스템 트레이딩 알파 후보 8개 검증. 결과:
-
-| 알파 | 가설 | 결과 | ADR |
-|---|---|---|---|
-| A2 | 섹터 로테이션 | FAIL | ADR-0006 |
-| A3 | 변동성 압축 | FAIL | ADR-0004 |
-| A4 | 유동성 급증 | FAIL | ADR-0001/2/3 |
-| A6 | 외국인·기관 수급 | BLOCKED (데이터 30일 한계) | — |
-| A7 | A4 결합 | FAIL | ADR-0003 |
-| A-F01 | Book-to-Market | FAIL | ADR-0007 |
-| A-F03 | Gross Profit/Assets | FAIL | ADR-0008 |
-| A-FF01 | V+Q 멀티팩터 | FAIL | ADR-0009 |
-| (honesty) | KOSPI200 재비교 | 모두 더 큰 음의 알파 | ADR-0010 |
-| (termination) | 종료 결정 | — | ADR-0011 |
-
-**60 frozen cells / 0 graduated.** KOSPI200 honesty check 결과 실패의
-구조적 원인은 2023–26 KR 메가캡 집중 강세장에서 EW 바스켓이
-cap-weighted 지수를 구조적으로 이길 수 없는 환경 요인. ADR-0011 참조.
-
-### Phase 2.5: 방향 B' 검토 (2026-05-11) — NO-GO
-
-ETF 운용보수 vs 봇 우위 가설을 Personal Index Bot + Tax-Loss
-Harvesting 형태로 검토. 사용자 조건(KR 증권사만 가능 + 자금 5천만원
-미만)에서 net -30~80만원/년 적자 추정으로 NO-GO 결론. 재검토 트리거:
-IBKR LLC 한국 거주자 가능 + 자금 1억+. ADR-0012 참조.
-
-### Phase 3: KR Investor Tools (2026-05-11 ~) — ACTIVE
-
-위 두 결정을 유지하면서 축적된 인프라를 KR 투자자 자동화 도구로
-재활용. 본 mandate는 알파 사냥과 무관한 별개 영역. ADR-0013 참조.
-
-## 학습 정리 (Phase 0~2 결산)
-
-### 시장에 대한 학습
-
-1. 2023–26 KR은 메가캡 집중 강세장 (삼성전자 4.5×, KOSPI200 W3 CAGR +165%).
-   EW 분산은 이 체제에서 구조적 열위.
-2. KR 거래세 23bps + 슬리피지가 회전율 높은 전략을 시작부터 불리하게 만듦.
-3. 무료 데이터 풀에서 가능한 가설은 학계가 30년 갈고닦은 가장 효율적인 영역.
-   개인 신규 알파 발견 확률 낮음.
-
-### 방법론에 대한 학습
-
-4. PREREG·Walk-forward·다중 벤치마크 honesty check는 자기기만 방지에 필수.
-5. 단일 약한 알파 1개 검증 → 1개 폐기 사이클은 비효율. 5–20개 알파 합산이
-   학술적으로 더 robust.
-
-### 개인 운용에 대한 학습
-
-6. **개인이 ETF를 이기는 거의 유일한 net 우위는 알파 사냥이 아니라 세제·
-   비용·행동통제.** SPIVA·Dalbar 등 수십 년 일관된 메시지.
-7. Behavior gap (충동 매매·panic-sell)이 알파 부재보다 큰 손실 원인일 수 있음.
-8. **"내가 왜 돈을 번다고 생각하는지 한 문장으로 설명 못 하면, 시스템
-   트레이딩 하지 말 것."**
-
-### 봇 운용에 대한 학습 (방향 B' 검토 추가)
-
-9. 운용보수 < 봇 우위 가설은 매매 수수료 환경에서 검증해야 함. 미국
-   wealth-tech의 TLH +0.5~1.5% pa 우위는 0~5bps 매매 수수료 환경의 결과.
-   KR 25bps 환경에서는 재현 불가.
-10. TLH 효과는 운용 자금 절대 규모에 선형 확대. Break-even 자금 규모는
-    KR 환경에서 1억원 이상.
-11. 자동매매로 일일 +0.5~1% 수익률 가설은 SentinelQ 최고 결과의 38~77배,
-    르네상스 메달리온의 3.8~7.7배. 시장 효율성·세계 최고 트레이더 데이터로
-    명백히 비현실.
-
-## 자기자본 운용 가이드 (ADR-0011 권고, Phase 3 도구로 보조)
-
-본 프로젝트의 자기자본 운용 권고는 ADR-0011·0012 그대로 유지:
-
-1. **세제 우대 계좌 최대 활용** (가장 큰 확실 우위) ← **Phase 3 A 도구가 직접 보조**
-   - ISA 중개형: 일반형 비과세 한도 500만원/5년 (2026 확대)
-   - 연금저축 + IRP: 연 900만원 한도, 세액공제 최대 148.5만원
-2. **저보수 글로벌 분산 ETF** (KR 단일 시장 메가캡 집중 위험 회피)
-3. **자동이체 적립** (증권사 기능, 봇 불필요)
-4. **분기 1회 리밸런스** (캘린더 알림)
-5. **충동 매매 차단** (시장 매일 안 보기, 뉴스 노출 최소화)
-6. **자금 1억+ 도래 시 ADR-0012 재검토 트리거 발동 검토**
+SentinelQ는 원래 KR 주식 알파 사냥(시스템 트레이딩) 프로젝트로
+2025-11에 시작했습니다. 6개월간 알파 후보 8개를 검증했으나 모두 실패했고,
+그 과정과 종료 결정은 [`docs/adr/`](docs/adr/)에 13건의 ADR로 기록되어
+있습니다. 2026-05 현재는 그때 축적한 인프라(KIS·DART 어댑터, 포트폴리오
+부기)를 재활용해 **세금·공시 자동화 도구**로 전환했습니다. 자세한 배경은
+[ADR-0013](docs/adr/ADR-0013-phase3-kr-investor-tools.md)을 참고하세요.
 
 ## 라이선스
 
-Proprietary. All rights reserved.
+[MIT](LICENSE) © 2026 illenne77

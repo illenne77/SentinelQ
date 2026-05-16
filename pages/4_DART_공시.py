@@ -18,21 +18,76 @@ st.set_page_config(page_title="DART 공시 — SentinelQ", layout="wide")
 st.title("🔔 DART 공시 모니터링")
 st.markdown("보유 종목의 신규 공시를 DART에서 조회합니다.")
 
-# ── 입력 ─────────────────────────────────────────────────────
-col1, col2 = st.columns([3, 1])
 
-with col1:
+def _get_portfolio_kr_tickers() -> list[str]:
+    """session_state의 포트폴리오/잔고에서 국내주식 종목코드 추출."""
+    if "portfolio" in st.session_state:
+        return [
+            pos.ticker
+            for pos in st.session_state["portfolio"].positions
+            if pos.market == "KR"
+        ]
+    if "kis_holdings" in st.session_state:
+        return [h.ticker for h in st.session_state["kis_holdings"] if h.market == "KR"]
+    return []
+
+
+# ── session_state 초기화 (위젯 렌더 전에 처리) ──────────────
+# 보유종목 가져오기 버튼은 위젯 이후에 위치하므로 dart_tickers 직접 수정 불가.
+# _pending 키를 경유해 다음 rerun 사이클 시작 시(위젯 렌더 전) 값을 적용한다.
+if "dart_tickers_pending" in st.session_state:
+    st.session_state["dart_tickers"] = st.session_state.pop("dart_tickers_pending")
+
+# 첫 진입 시 포트폴리오 KR 종목으로 자동 초기화
+if "dart_tickers" not in st.session_state:
+    _initial = _get_portfolio_kr_tickers()
+    st.session_state["dart_tickers"] = ", ".join(_initial) if _initial else ""
+
+# ── 종목코드 입력 + 자동 연동 버튼 ───────────────────────────
+col_input, col_btn = st.columns([4, 1])
+
+with col_input:
     tickers_input = st.text_input(
         "종목코드 (쉼표 또는 공백 구분)",
-        placeholder="005930, 000660, AAPL",
+        key="dart_tickers",
+        placeholder="005930, 000660",
         help="국내주식 6자리 코드 (예: 005930). 해외주식은 DART 미지원.",
     )
 
-with col2:
+with col_btn:
+    st.write("")  # 라벨 높이 맞춤
+    st.write("")
+    if st.button(
+        "보유종목 가져오기",
+        help="포트폴리오 대시보드의 KR 보유 종목을 자동으로 불러옵니다.",
+        use_container_width=True,
+    ):
+        kr_tickers = _get_portfolio_kr_tickers()
+        if kr_tickers:
+            # 위젯 렌더 이후이므로 dart_tickers 직접 수정 불가 → _pending 경유
+            st.session_state["dart_tickers_pending"] = ", ".join(kr_tickers)
+            st.rerun()
+        else:
+            st.warning(
+                "포트폴리오 대시보드에서 먼저 보유 종목을 입력하고 '계산하기'를 눌러 주세요."
+            )
+
+# 자동 로드 안내 캡션
+_kr_from_portfolio = _get_portfolio_kr_tickers()
+if _kr_from_portfolio and tickers_input == ", ".join(_kr_from_portfolio):
+    st.caption("포트폴리오 대시보드의 KR 보유 종목이 자동 로드됐습니다.")
+elif not _kr_from_portfolio:
+    st.caption(
+        "포트폴리오 대시보드에서 종목을 계산하면 '보유종목 가져오기'로 자동 연동됩니다."
+    )
+
+# ── 조회 옵션 ─────────────────────────────────────────────────
+col3, col4, col5 = st.columns([1, 1, 2])
+
+with col3:
     days_back = st.number_input("조회 기간 (일)", min_value=1, max_value=90, value=7, step=1)
 
-col3, col4 = st.columns(2)
-with col3:
+with col4:
     importance = st.radio(
         "중요도 필터",
         ["HIGH만", "전체"],
@@ -40,7 +95,7 @@ with col3:
         help="HIGH: 유상증자·합병·상장폐지 등 주요 이슈만 표시",
     )
 
-with col4:
+with col5:
     dart_api_key = st.text_input(
         "DART API 키",
         value=os.environ.get("DART_API_KEY", ""),

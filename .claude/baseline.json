@@ -4,7 +4,7 @@
     "current": "3",
     "mandate": "KR Investor Tools (양도세 + DART 공시)",
     "active_prereg": "PREREG-0008-tax-tool",
-    "active_amendments": ["PREREG-0008-amendment-1"]
+    "active_amendments": ["PREREG-0008-amendment-1", "PREREG-0008-amendment-2"]
   },
   "python": {
     "min_version": "3.11",
@@ -13,12 +13,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 198,
+    "pass": 264,
     "fail": 0,
     "skip": 0,
-    "total": 198,
+    "total": 264,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-16",
+    "measured_at": "2026-05-16 (Step 1)",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -174,6 +174,13 @@
       "fail": 0,
       "skip": 0,
       "note": "T008 G2 검증 스크립트 + G6 자기 평가 문서 완료. sentinelq/reports/g2_verify.py 신규 (load_summary_csv/compare/FieldResult/G2Report/format_report/to_json/main). scripts/verify_g2.py shim. coverage 97% on g2_verify.py. tests/test_g2_verify.py 23건 신규 통과 (198). docs/g6-self-evaluation.md 자기 평가 프레임워크 작성."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 264,
+      "fail": 0,
+      "skip": 0,
+      "note": "Step 1 SaaS 전환 기반 완료. T009 키움증권 HTS CSV 파서 (kiwoom_csv.py, 27 tests), T010 미래에셋증권 HTS CSV 파서 (miraeasset_csv.py, 12 tests), T011 홈택스 신고서 가이드 (hometax_guide.py, 17 tests), T012 위택스 지방소득세 안내 (wetax_guide.py, 10 tests). PREREG-0008-amendment-2 작성. 총 264 passed (회귀 0). feature/T009-kiwoom-csv 브랜치."
     }
   ]
 }

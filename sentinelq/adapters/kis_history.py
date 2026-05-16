@@ -53,11 +53,15 @@ TR_OVERSEAS_TRANS: dict[Env, str] = {"paper": "VTTS3035R", "live": "TTTS3035R"}
 TR_DOMESTIC_TRANS: dict[Env, str] = {"paper": "VTTC8001R", "live": "TTTC8001R"}
 TR_OVERSEAS_PROFIT: dict[Env, str] = {"paper": "VTRP6504R", "live": "CTRP6504R"}
 TR_DOMESTIC_PROFIT: dict[Env, str] = {"paper": "VTSC9215R", "live": "CTSC9215R"}
+TR_DOMESTIC_BALANCE: dict[Env, str] = {"paper": "VTTC8434R", "live": "TTTC8434R"}
+TR_OVERSEAS_BALANCE: dict[Env, str] = {"paper": "VTTS3012R", "live": "TTTS3012R"}
 
 PATH_OVERSEAS_TRANS = "/uapi/overseas-stock/v1/trading/inquire-ccnl"
 PATH_DOMESTIC_TRANS = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
 PATH_OVERSEAS_PROFIT = "/uapi/overseas-stock/v1/trading/inquire-period-profit"
 PATH_DOMESTIC_PROFIT = "/uapi/domestic-stock/v1/trading/inquire-period-trade-profit"
+PATH_DOMESTIC_BALANCE = "/uapi/domestic-stock/v1/trading/inquire-balance"
+PATH_OVERSEAS_BALANCE = "/uapi/overseas-stock/v1/trading/inquire-balance"
 
 DOMESTIC_WINDOW_DAYS = 90  # 국내 거래내역 endpoint 단일 호출 한도
 
@@ -92,6 +96,23 @@ class Transaction:
     fee: Decimal
     tax: Decimal
     fx_rate: Decimal | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class HoldingRecord:
+    """잔고 한 종목. 포트폴리오 대시보드·세후 수익률 계산 입력 (T013)."""
+
+    ticker: str
+    name: str
+    market: Literal["KR", "US"]
+    quantity: int
+    avg_price_krw: Decimal  # 매입 평균단가 (원화 환산)
+    cost_basis_krw: Decimal  # 총 매입원가 (원화)
+    current_price_krw: Decimal  # 현재가 (원화)
+    current_value_krw: Decimal  # 현재 평가금액 (원화)
+    unrealized_gain_krw: Decimal  # 미실현 손익 (원화)
+    currency: Literal["KRW", "USD"]
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -502,12 +523,151 @@ def inquire_period_profit(
     return results
 
 
+def inquire_domestic_balance(
+    *,
+    env: Env = "paper",
+    account: str | None = None,
+    confirm_live: bool = False,
+) -> list[HoldingRecord]:
+    """국내주식 잔고 조회 (VTTC8434R / TTTC8434R). 수량 0 종목 제외.
+
+    PREREG: PREREG-0009 §2.1 T013
+    """
+    cano, prdt = _account_parts(account, env)
+    tr_id = TR_DOMESTIC_BALANCE[env]
+    results: list[HoldingRecord] = []
+    ctx_fk = ""
+    ctx_nk = ""
+    while True:
+        params: dict[str, str] = {
+            "CANO": cano,
+            "ACNT_PRDT_CD": prdt,
+            "AFHR_FLPR_YN": "N",
+            "OFL_YN": "",
+            "INQR_DVSN": "02",
+            "UNPR_DVSN": "01",
+            "FUND_STTL_ICLD_YN": "N",
+            "FNCG_AMT_AUTO_RDPT_YN": "N",
+            "PRCS_DVSN": "00",
+            "CTX_AREA_FK100": ctx_fk,
+            "CTX_AREA_NK100": ctx_nk,
+        }
+        payload = _request(
+            PATH_DOMESTIC_BALANCE, params=params, tr_id=tr_id, env=env, confirm_live=confirm_live
+        )
+        for row in payload.get("output1", []) or []:
+            qty = int(str(row.get("hldg_qty", "0") or "0"))
+            if qty <= 0:
+                continue
+            avg = Decimal(str(row.get("pchs_avg_pric", "0") or "0"))
+            cost = Decimal(str(row.get("pchs_amt", "0") or "0"))
+            evlu = Decimal(str(row.get("evlu_amt", "0") or "0"))
+            pfls = Decimal(str(row.get("evlu_pfls_amt", "0") or "0"))
+            prpr = Decimal(str(row.get("prpr", "0") or "0"))
+            results.append(
+                HoldingRecord(
+                    ticker=str(row.get("pdno", "")).strip().zfill(6),
+                    name=str(row.get("prdt_name", "")).strip(),
+                    market="KR",
+                    quantity=qty,
+                    avg_price_krw=avg,
+                    cost_basis_krw=cost if cost else avg * qty,
+                    current_price_krw=prpr,
+                    current_value_krw=evlu,
+                    unrealized_gain_krw=pfls,
+                    currency="KRW",
+                    raw=row,
+                )
+            )
+        ctx_fk = (payload.get("ctx_area_fk100") or "").strip()
+        ctx_nk = (payload.get("ctx_area_nk100") or "").strip()
+        if not ctx_nk:
+            break
+    return results
+
+
+def inquire_overseas_balance(
+    *,
+    env: Env = "paper",
+    account: str | None = None,
+    exchanges: list[str] | None = None,
+    confirm_live: bool = False,
+) -> list[HoldingRecord]:
+    """해외주식 잔고 조회 (VTTS3012R / TTTS3012R). 수량 0 종목 제외.
+
+    exchanges: 조회할 거래소 코드 리스트. 기본값: ["NASD", "NYSE", "AMEX"].
+    PREREG: PREREG-0009 §2.1 T013
+    """
+    if exchanges is None:
+        exchanges = ["NASD", "NYSE", "AMEX"]
+    cano, prdt = _account_parts(account, env)
+    tr_id = TR_OVERSEAS_BALANCE[env]
+    seen: set[str] = set()
+    results: list[HoldingRecord] = []
+
+    for excg in exchanges:
+        ctx_fk = ""
+        ctx_nk = ""
+        while True:
+            params: dict[str, str] = {
+                "CANO": cano,
+                "ACNT_PRDT_CD": prdt,
+                "OVRS_EXCG_CD": excg,
+                "TR_CRCY_CD": "USD",
+                "CTX_AREA_FK200": ctx_fk,
+                "CTX_AREA_NK200": ctx_nk,
+            }
+            payload = _request(
+                PATH_OVERSEAS_BALANCE,
+                params=params,
+                tr_id=tr_id,
+                env=env,
+                confirm_live=confirm_live,
+            )
+            for row in payload.get("output1", []) or []:
+                qty = int(str(row.get("ovrs_cblc_qty", "0") or "0"))
+                if qty <= 0:
+                    continue
+                ticker = str(row.get("ovrs_pdno", "")).strip().upper()
+                if ticker in seen:
+                    continue
+                seen.add(ticker)
+                avg_krw = Decimal(str(row.get("pchs_avg_pric", "0") or "0"))
+                cost_krw = Decimal(str(row.get("pchs_amt", "0") or "0"))
+                evlu_krw = Decimal(str(row.get("ovrs_stck_evlu_amt", "0") or "0"))
+                pfls_krw = Decimal(str(row.get("evlu_pfls_amt", "0") or "0"))
+                cur_price_krw = Decimal(str(row.get("now_pric2", "0") or "0"))
+                results.append(
+                    HoldingRecord(
+                        ticker=ticker,
+                        name=str(row.get("ovrs_item_name", "")).strip(),
+                        market="US",
+                        quantity=qty,
+                        avg_price_krw=avg_krw,
+                        cost_basis_krw=cost_krw if cost_krw else avg_krw * qty,
+                        current_price_krw=cur_price_krw,
+                        current_value_krw=evlu_krw,
+                        unrealized_gain_krw=pfls_krw,
+                        currency="USD",
+                        raw=row,
+                    )
+                )
+            ctx_fk = (payload.get("ctx_area_fk200") or "").strip()
+            ctx_nk = (payload.get("ctx_area_nk200") or "").strip()
+            if not ctx_nk:
+                break
+    return results
+
+
 __all__ = [
     "Env",
+    "HoldingRecord",
     "KisApiError",
     "ProfitRecord",
     "Transaction",
+    "inquire_domestic_balance",
     "inquire_domestic_daily_trans",
+    "inquire_overseas_balance",
     "inquire_overseas_period_trans",
     "inquire_period_profit",
 ]

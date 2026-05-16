@@ -8,7 +8,7 @@ version = "0.3.0"
 description = "KR Investor Tools — 양도세 자동 계산 + DART 공시 알림 (Phase 3)"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Proprietary" }
+license = { text = "MIT" }
 authors = [{ name = "illenne77" }]
 
 # Phase 3 mandate에 필요한 최소 의존성만.

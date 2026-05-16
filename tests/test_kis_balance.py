@@ -50,15 +50,18 @@ _KR_ROW = {
     "prpr": "60000",
 }
 
+# 실제 KIS TTTS3012R 응답 형식: 금액은 USD 원시값, KRW 환산은 wcrc/frcr 손익 필드로 역산
+# FX = wcrc_evlu_pfls_amt / frcr_evlu_pfls_amt = 3_213_000 / 2_380 = 1350
 _US_ROW = {
     "ovrs_pdno": "NVDA",
     "ovrs_item_name": "NVIDIA",
     "ovrs_cblc_qty": "80",
-    "pchs_avg_pric": "165250",
-    "pchs_amt": "13220000",
-    "ovrs_stck_evlu_amt": "15600000",
-    "evlu_pfls_amt": "2380000",
-    "now_pric2": "195000",
+    "pchs_avg_pric": "165.25",  # USD 평균단가
+    "pchs_amt": "0",  # 실제 API에서 0으로 옴
+    "ovrs_stck_evlu_amt": "15600.00",  # USD 평가금액
+    "frcr_evlu_pfls_amt": "2380.00",  # USD 손익 (FX 역산용)
+    "wcrc_evlu_pfls_amt": "3213000",  # KRW 손익 (FX 역산용) → FX=1350
+    "now_pric2": "195.00",  # USD 현재가
 }
 
 
@@ -137,8 +140,10 @@ class TestInquireOverseasBalance:
         assert h.market == "US"
         assert h.quantity == 80
         assert h.currency == "USD"
-        assert h.current_value_krw == Decimal("15600000")
-        assert h.unrealized_gain_krw == Decimal("2380000")
+        # FX=1350 역산: 15600 USD x 1350 = 21,060,000원
+        assert h.current_value_krw == Decimal("15600.00") * Decimal("1350")
+        # wcrc_evlu_pfls_amt 직접 사용
+        assert h.unrealized_gain_krw == Decimal("3213000")
 
     @patch("sentinelq.adapters.kis_history._account_parts", return_value=("12345678", "01"))
     @patch("sentinelq.adapters.kis_history._request")
@@ -177,4 +182,5 @@ class TestInquireOverseasBalance:
         assert isinstance(h, HoldingRecord)
         assert h.ticker == "NVDA"
         assert h.name == "NVIDIA"
-        assert h.avg_price_krw == Decimal("165250")
+        # FX=1350 역산: 165.25 USD x 1350 = 223,087.5원
+        assert h.avg_price_krw == Decimal("165.25") * Decimal("1350")

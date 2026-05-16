@@ -238,15 +238,15 @@ def test_summary_csv_has_header_and_key_fields_ac9():
     csv_str = export_summary_csv(form)
 
     lines = csv_str.strip().splitlines()
-    assert lines[0] == "field,value"
+    assert lines[0] == "항목,금액(원)"
 
     fields = {row.split(",")[0] for row in lines[1:]}
     for key in (
-        "tax_year",
-        "total_proceeds_krw",
-        "national_tax_krw",
-        "local_tax_krw",
-        "total_tax_krw",
+        "과세연도",
+        "양도가액",
+        "국세(양도소득세)",
+        "지방소득세",
+        "납부세액 합계",
     ):
         assert key in fields, f"summary CSV missing field: {key}"
 
@@ -263,13 +263,13 @@ def test_detail_csv_per_line_columns_ac10():
     lines = csv_str.strip().splitlines()
     header_cols = lines[0].split(",")
     for col in (
-        "market",
-        "ticker",
-        "sell_date",
-        "quantity",
-        "proceeds_krw",
-        "acquisition_cost_krw",
-        "realized_gain_krw",
+        "시장",
+        "종목코드",
+        "매도일",
+        "수량",
+        "양도가액(원)",
+        "취득가액(원)",
+        "양도차익(원)",
     ):
         assert col in header_cols
 

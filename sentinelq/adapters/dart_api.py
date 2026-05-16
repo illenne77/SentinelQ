@@ -141,7 +141,7 @@ def fetch_disclosures(
     }
     url = f"{_DART_BASE}/list.json?" + urllib.parse.urlencode(params)
 
-    with urllib.request.urlopen(url, timeout=15) as resp:
+    with urllib.request.urlopen(url, timeout=30) as resp:
         data = json.loads(resp.read().decode("utf-8"))
 
     status = data.get("status", "")

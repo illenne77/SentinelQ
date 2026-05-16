@@ -16,12 +16,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 387,
+    "pass": 421,
     "fail": 0,
     "skip": 0,
-    "total": 387,
+    "total": 421,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-16 (Step A - DART Monitor)",
+    "measured_at": "2026-05-16 (Step B - Streamlit UI)",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -205,6 +205,13 @@
       "fail": 0,
       "skip": 0,
       "note": "Step A DART 공시 모니터링 완료. T020 DART API 어댑터 (adapters/dart_api.py, DisclosureRecord+_classify+fetch_disclosures+fetch_holdings_disclosures, 22 tests), T021 모니터 모듈 (monitoring/dart_monitor.py, MonitorResult+run_monitor, 8 tests), T022 텔레그램 알림 (notifications/telegram.py, format_disclosure_message+send_disclosure_alert, 13 tests), T023 CLI (scripts/run_dart_monitor.py). PREREG-0011-dart-monitor 작성. 총 387 passed (회귀 0). feature/T020-dart-monitor 브랜치."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 421,
+      "fail": 0,
+      "skip": 0,
+      "note": "Step B Streamlit Web UI 완료. T024 UI 헬퍼 모듈 (sentinelq/ui/helpers.py, fmt_krw/fmt_pct/validate_target_weights/portfolio_to_rows/portfolio_summary/disclosures_to_rows/rebalance_to_rows/rebalance_summary/env_status, 34 tests), T025 Streamlit 멀티페이지 앱 (streamlit_app.py Home + pages/ 4개: 양도세계산기·포트폴리오·리밸런싱·DART공시). PREREG-0012-streamlit-ui 작성. streamlit>=1.32 optional dep. 총 421 passed (회귀 0). feature/phase3-g1-validation 브랜치."
     }
   ]
 }

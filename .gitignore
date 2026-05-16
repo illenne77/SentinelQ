@@ -75,5 +75,11 @@ htmlcov/
 .claude/*
 !.claude/baseline.json
 
+# ---- Streamlit Cloud ----
+.streamlit/secrets.toml
+
 # ---- Phase 3 본인 거래내역 (절대 commit 금지) ----
 data/private/
+
+# ---- DART 법인코드 캐시 (공개 데이터 — commit 허용) ----
+!data/cache/dart/corp_code.json

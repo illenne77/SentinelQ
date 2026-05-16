@@ -75,15 +75,20 @@ if st.button("계산하기 🔄", type="primary"):
                 continue
             cost = avg_price * qty
             value = cur_price * qty
+            market_val = str(row["시장"]).strip()
+            currency_val = "USD" if market_val == "US" else "KRW"
             holdings.append(
                 HoldingRecord(
                     ticker=str(row["종목코드"]).strip(),
                     name=str(row["종목명"]).strip(),
-                    market=str(row["시장"]).strip(),
+                    market=market_val,
                     quantity=qty,
+                    avg_price_krw=avg_price,
                     cost_basis_krw=cost,
+                    current_price_krw=cur_price,
                     current_value_krw=value,
                     unrealized_gain_krw=value - cost,
+                    currency=currency_val,
                 )
             )
         except Exception as exc:

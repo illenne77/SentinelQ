@@ -186,22 +186,22 @@ def export_summary_csv(form: NTSCapitalGainsForm) -> str:
     """폼 요약을 (field, value) 2열 CSV 로 직렬화."""
     buf = StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["field", "value"])
+    writer.writerow(["항목", "금액(원)"])
     rows = [
-        ("tax_year", str(form.tax_year)),
-        ("filing_period_start", str(form.filing_period_start)),
-        ("filing_period_end", str(form.filing_period_end)),
-        ("sale_count", str(form.sale_count)),
-        ("total_proceeds_krw", str(form.total_proceeds_krw)),
-        ("total_acquisition_cost_krw", str(form.total_acquisition_cost_krw)),
-        ("total_realized_gain_krw", str(form.total_realized_gain_krw)),
-        ("basic_deduction_krw", str(form.basic_deduction_krw)),
-        ("deduction_applied_krw", str(form.deduction_applied_krw)),
-        ("taxable_base_krw", str(form.taxable_base_krw)),
-        ("national_tax_krw", str(form.national_tax_krw)),
-        ("local_tax_krw", str(form.local_tax_krw)),
-        ("total_tax_krw", str(form.total_tax_krw)),
-        ("t003_combined_tax_krw", str(form.t003_combined_tax_krw)),
+        ("과세연도", str(form.tax_year)),
+        ("신고기간 시작", str(form.filing_period_start)),
+        ("신고기간 종료", str(form.filing_period_end)),
+        ("매도건수", str(form.sale_count)),
+        ("양도가액", str(form.total_proceeds_krw)),
+        ("취득가액", str(form.total_acquisition_cost_krw)),
+        ("양도차익", str(form.total_realized_gain_krw)),
+        ("기본공제 한도", str(form.basic_deduction_krw)),
+        ("기본공제 적용액", str(form.deduction_applied_krw)),
+        ("과세표준", str(form.taxable_base_krw)),
+        ("국세(양도소득세)", str(form.national_tax_krw)),
+        ("지방소득세", str(form.local_tax_krw)),
+        ("납부세액 합계", str(form.total_tax_krw)),
+        ("손익통산 후 세액", str(form.t003_combined_tax_krw)),
     ]
     writer.writerows(rows)
     return buf.getvalue()
@@ -213,13 +213,13 @@ def export_detail_csv(form: NTSCapitalGainsForm) -> str:
     writer = csv.writer(buf)
     writer.writerow(
         [
-            "market",
-            "ticker",
-            "sell_date",
-            "quantity",
-            "proceeds_krw",
-            "acquisition_cost_krw",
-            "realized_gain_krw",
+            "시장",
+            "종목코드",
+            "매도일",
+            "수량",
+            "양도가액(원)",
+            "취득가액(원)",
+            "양도차익(원)",
         ]
     )
     for line in form.sale_lines:

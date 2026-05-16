@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from sentinelq.adapters.dart_api import DisclosureRecord
@@ -26,6 +27,18 @@ def _inject_secrets() -> None:
         pass
 
 
+def _load_dotenv() -> None:
+    """로컬 실행: 프로젝트 루트 .env → os.environ 로딩 (Streamlit Cloud 시 no-op)."""
+    try:
+        from dotenv import load_dotenv
+
+        _root = Path(__file__).resolve().parent.parent.parent
+        load_dotenv(_root / ".env")
+    except Exception:
+        pass
+
+
+_load_dotenv()
 _inject_secrets()
 
 

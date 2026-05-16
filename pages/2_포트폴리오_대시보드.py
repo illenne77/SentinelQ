@@ -39,7 +39,17 @@ with st.expander("🔗 KIS 증권계좌 자동 조회 (로컬 실행 전용)", e
 
     _kis_key = os.environ.get("KIS_APP_KEY") or os.environ.get("KIS_LIVE_APP_KEY")
     _kis_secret = os.environ.get("KIS_APP_SECRET") or os.environ.get("KIS_LIVE_APP_SECRET")
-    _kis_account = os.environ.get("KIS_ACCOUNT")
+    _kis_account = (
+        os.environ.get("KIS_ACCOUNT")
+        or (
+            os.environ.get("KIS_LIVE_ACCOUNT_NO")
+            and f"{os.environ['KIS_LIVE_ACCOUNT_NO']}-{os.environ.get('KIS_LIVE_ACCOUNT_PRDT', '01')}"
+        )
+        or (
+            os.environ.get("KIS_PAPER_ACCOUNT_NO")
+            and f"{os.environ['KIS_PAPER_ACCOUNT_NO']}-{os.environ.get('KIS_PAPER_ACCOUNT_PRDT', '01')}"
+        )
+    )
     _kis_ready = bool(_kis_key and _kis_secret and _kis_account)
 
     if not _kis_ready:
@@ -61,6 +71,8 @@ with st.expander("🔗 KIS 증권계좌 자동 조회 (로컬 실행 전용)", e
                 os.environ["KIS_LIVE_APP_SECRET"] = _kis_secret
             if not os.environ.get("KIS_LIVE_BASE_URL"):
                 os.environ["KIS_LIVE_BASE_URL"] = "https://openapi.koreainvestment.com:9443"
+            if not os.environ.get("KIS_ACCOUNT"):
+                os.environ["KIS_ACCOUNT"] = _kis_account
             os.environ["SENTINELQ_LIVE_ALLOW"] = "1"
 
             from sentinelq.adapters.kis_history import fetch_balance

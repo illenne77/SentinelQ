@@ -238,7 +238,14 @@ class TestErrorHandling:
         assert "계좌번호 오류" in exc_info.value.message
 
     def test_invalid_account_format_raises_value_error(self, monkeypatch, mock_token):
-        monkeypatch.delenv("KIS_ACCOUNT", raising=False)
+        for _var in (
+            "KIS_ACCOUNT",
+            "KIS_LIVE_ACCOUNT_NO",
+            "KIS_LIVE_ACCOUNT_PRDT",
+            "KIS_PAPER_ACCOUNT_NO",
+            "KIS_PAPER_ACCOUNT_PRDT",
+        ):
+            monkeypatch.delenv(_var, raising=False)
         with pytest.raises(ValueError, match="KIS_ACCOUNT"):
             inquire_overseas_period_trans(date(2025, 1, 1), date(2025, 1, 31))
 

@@ -632,14 +632,27 @@ def inquire_overseas_balance(
                 if ticker in seen:
                     continue
                 seen.add(ticker)
-                cost_krw = Decimal(str(row.get("pchs_amt", "0") or "0"))
-                evlu_krw = Decimal(str(row.get("ovrs_stck_evlu_amt", "0") or "0"))
-                pfls_krw = Decimal(str(row.get("evlu_pfls_amt", "0") or "0"))
-                # avg_price/current_price: KRW 금액을 수량으로 나눠 원화 단가 파생
-                # (pchs_avg_pric·now_pric2 는 USD 원시값 — 원화 표시에 부적합)
+                # USD 원시값
+                usd_avg = Decimal(str(row.get("pchs_avg_pric", "0") or "0"))
+                usd_cur = Decimal(str(row.get("now_pric2", "0") or "0"))
+                usd_evlu = Decimal(str(row.get("ovrs_stck_evlu_amt", "0") or "0"))
+                pfls_usd = Decimal(str(row.get("frcr_evlu_pfls_amt", "0") or "0"))
+                pfls_krw = Decimal(str(row.get("wcrc_evlu_pfls_amt", "0") or "0"))
+
+                # 환율 역산: 원화손익 / 외화손익 (둘 다 0이면 env var → 기본값 1350)
+                fx = Decimal("0")
+                if pfls_usd and pfls_krw:
+                    fx = abs(pfls_krw / pfls_usd)
+                if not fx:
+                    fx = Decimal(os.environ.get("KIS_FX_USD_KRW", "1350"))
+
                 qty_d = Decimal(qty)
-                avg_price_krw = cost_krw / qty_d if cost_krw else Decimal("0")
-                cur_price_krw = evlu_krw / qty_d if evlu_krw else Decimal("0")
+                avg_price_krw = usd_avg * fx
+                cur_price_krw = usd_cur * fx
+                cost_basis_krw = usd_avg * qty_d * fx
+                current_value_krw = usd_evlu * fx
+                unrealized_gain_krw = pfls_krw if pfls_krw else (usd_evlu - usd_avg * qty_d) * fx
+
                 results.append(
                     HoldingRecord(
                         ticker=ticker,
@@ -647,10 +660,10 @@ def inquire_overseas_balance(
                         market="US",
                         quantity=qty,
                         avg_price_krw=avg_price_krw,
-                        cost_basis_krw=cost_krw,
+                        cost_basis_krw=cost_basis_krw,
                         current_price_krw=cur_price_krw,
-                        current_value_krw=evlu_krw,
-                        unrealized_gain_krw=pfls_krw,
+                        current_value_krw=current_value_krw,
+                        unrealized_gain_krw=unrealized_gain_krw,
                         currency="USD",
                         raw=row,
                     )

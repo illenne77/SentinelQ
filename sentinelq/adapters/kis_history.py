@@ -659,12 +659,26 @@ def inquire_overseas_balance(
     return results
 
 
+def fetch_balance(
+    *,
+    env: Env = "live",
+    account: str | None = None,
+    confirm_live: bool = False,
+) -> list[HoldingRecord]:
+    """국내·해외 잔고 통합 조회 (포트폴리오 대시보드용)."""
+    kr = inquire_domestic_balance(env=env, account=account, confirm_live=confirm_live)
+    us = inquire_overseas_balance(env=env, account=account, confirm_live=confirm_live)
+    return kr + us
+
+
 __all__ = [
+    "SECRETS_DIR",
     "Env",
     "HoldingRecord",
     "KisApiError",
     "ProfitRecord",
     "Transaction",
+    "fetch_balance",
     "inquire_domestic_balance",
     "inquire_domestic_daily_trans",
     "inquire_overseas_balance",

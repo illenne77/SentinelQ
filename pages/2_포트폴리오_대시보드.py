@@ -6,6 +6,7 @@ PREREG: PREREG-0012 §2.4
 
 from __future__ import annotations
 
+import os
 from decimal import Decimal
 
 import pandas as pd
@@ -28,23 +29,97 @@ with st.expander("📅 당해 연도 기 실현 손익 (기본공제 계산용)"
         help="올해 이미 실현한 양도차익. 0이면 기본공제 250만원 전액 미사용.",
     )
 
-st.subheader("📋 보유 종목 입력")
-st.caption("아래 표에 직접 입력하거나 편집하세요.")
+# ── KIS 계좌 자동 조회 (로컬 전용) ───────────────────────────
+with st.expander("🔗 KIS 증권계좌 자동 조회 (로컬 실행 전용)", expanded=False):
+    st.caption(
+        "KIS OpenAPI를 통해 보유 종목을 자동으로 불러옵니다.\n\n"
+        "⚠️ Streamlit Cloud에서는 KIS API 접근이 제한됩니다. 로컬에서만 동작합니다.\n\n"
+        "사전 준비: `.env` 파일에 KIS 키 설정 후 `python scripts/kis_token.py live` 실행 필요."
+    )
 
-# ── 기본 예시 데이터 ─────────────────────────────────────────
-_DEFAULT = pd.DataFrame(
-    {
-        "종목코드": ["005930", "AAPL"],
-        "종목명": ["삼성전자", "Apple Inc"],
-        "시장": ["KR", "US"],
-        "수량": [10, 5],
-        "평균단가(원)": [70_000, 1_800_000],
-        "현재가(원)": [78_000, 2_100_000],
-    }
-)
+    _kis_key = os.environ.get("KIS_APP_KEY") or os.environ.get("KIS_LIVE_APP_KEY")
+    _kis_secret = os.environ.get("KIS_APP_SECRET") or os.environ.get("KIS_LIVE_APP_SECRET")
+    _kis_account = os.environ.get("KIS_ACCOUNT")
+    _kis_ready = bool(_kis_key and _kis_secret and _kis_account)
+
+    if not _kis_ready:
+        st.warning("KIS_APP_KEY, KIS_APP_SECRET, KIS_ACCOUNT 환경변수를 설정해야 합니다.")
+    else:
+        from sentinelq.adapters.kis_history import SECRETS_DIR
+
+        _token_ok = (SECRETS_DIR / "kis_token_live.json").exists()
+        if not _token_ok:
+            st.warning(
+                "KIS 토큰이 없습니다. 먼저 터미널에서 실행하세요:\n"
+                "```\npython scripts/kis_token.py live\n```"
+            )
+
+        if st.button("KIS 잔고 조회 🔄", disabled=not _token_ok):
+            if not os.environ.get("KIS_LIVE_APP_KEY"):
+                os.environ["KIS_LIVE_APP_KEY"] = _kis_key
+            if not os.environ.get("KIS_LIVE_APP_SECRET"):
+                os.environ["KIS_LIVE_APP_SECRET"] = _kis_secret
+            if not os.environ.get("KIS_LIVE_BASE_URL"):
+                os.environ["KIS_LIVE_BASE_URL"] = "https://openapi.koreainvestment.com:9443"
+            os.environ["SENTINELQ_LIVE_ALLOW"] = "1"
+
+            from sentinelq.adapters.kis_history import fetch_balance
+
+            with st.spinner("KIS 잔고 조회 중..."):
+                try:
+                    _auto_holdings = fetch_balance(env="live", confirm_live=True)
+                except Exception as exc:
+                    st.error(f"조회 오류: {exc}")
+                    _err = str(exc).lower()
+                    if any(k in _err for k in ("timed out", "network", "urlopen", "connection")):
+                        st.info(
+                            "💡 Streamlit Cloud에서는 KIS API 접근이 제한됩니다. "
+                            "로컬에서 실행하세요:\n"
+                            "```bash\nstreamlit run streamlit_app.py\n```"
+                        )
+                    st.stop()
+
+            if not _auto_holdings:
+                st.info("조회된 잔고가 없습니다.")
+            else:
+                st.success(f"{len(_auto_holdings)}개 종목 조회 완료. 아래 표에 자동 입력됩니다.")
+                st.session_state["kis_holdings"] = _auto_holdings
+                st.rerun()
+
+# ── 보유 종목 입력 테이블 ─────────────────────────────────────
+st.subheader("📋 보유 종목 입력")
+
+if "kis_holdings" in st.session_state:
+    st.caption("KIS 자동 조회 데이터가 로드됐습니다. 수정 후 계산하기를 누르세요.")
+    _h = st.session_state["kis_holdings"]
+    _initial = pd.DataFrame(
+        [
+            {
+                "종목코드": h.ticker,
+                "종목명": h.name,
+                "시장": h.market,
+                "수량": h.quantity,
+                "평균단가(원)": int(h.avg_price_krw),
+                "현재가(원)": int(h.current_price_krw),
+            }
+            for h in _h
+        ]
+    )
+else:
+    st.caption("아래 표에 직접 입력하거나 편집하세요.")
+    _initial = pd.DataFrame(
+        {
+            "종목코드": ["005930", "AAPL"],
+            "종목명": ["삼성전자", "Apple Inc"],
+            "시장": ["KR", "US"],
+            "수량": [10, 5],
+            "평균단가(원)": [70_000, 1_800_000],
+            "현재가(원)": [78_000, 2_100_000],
+        }
+    )
 
 edited = st.data_editor(
-    _DEFAULT,
+    _initial,
     num_rows="dynamic",
     use_container_width=True,
     column_config={
@@ -60,7 +135,6 @@ if st.button("계산하기 🔄", type="primary"):
         st.warning("종목을 1개 이상 입력해 주세요.")
         st.stop()
 
-    # HoldingRecord 생성
     from sentinelq.adapters.kis_history import HoldingRecord
     from sentinelq.portfolio.after_tax import calculate_after_tax
 
@@ -134,7 +208,6 @@ if st.button("계산하기 🔄", type="primary"):
     else:
         st.info("보유 종목 없음")
 
-    # 세션 상태에 포트폴리오 저장 (리밸런싱 페이지 연동)
     st.session_state["portfolio"] = portfolio
     st.caption("※ 이 포트폴리오 데이터가 리밸런싱 계산기 페이지에서 자동 로드됩니다.")
 

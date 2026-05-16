@@ -4,6 +4,7 @@
     "current": "3",
     "mandate": "KR Investor Tools (양도세 + DART 공시)",
     "active_prereg": "PREREG-0008-tax-tool",
+    "active_prereg_2": "PREREG-0009-asset-tracker",
     "active_amendments": ["PREREG-0008-amendment-1", "PREREG-0008-amendment-2"]
   },
   "python": {
@@ -13,12 +14,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 264,
+    "pass": 306,
     "fail": 0,
     "skip": 0,
-    "total": 264,
+    "total": 306,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-16 (Step 1)",
+    "measured_at": "2026-05-16 (Step 2)",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -181,6 +182,13 @@
       "fail": 0,
       "skip": 0,
       "note": "Step 1 SaaS 전환 기반 완료. T009 키움증권 HTS CSV 파서 (kiwoom_csv.py, 27 tests), T010 미래에셋증권 HTS CSV 파서 (miraeasset_csv.py, 12 tests), T011 홈택스 신고서 가이드 (hometax_guide.py, 17 tests), T012 위택스 지방소득세 안내 (wetax_guide.py, 10 tests). PREREG-0008-amendment-2 작성. 총 264 passed (회귀 0). feature/T009-kiwoom-csv 브랜치."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 306,
+      "fail": 0,
+      "skip": 0,
+      "note": "Step 2 포트폴리오 대시보드 완료. T013 KIS 잔고 조회 어댑터 (HoldingRecord + inquire_domestic_balance + inquire_overseas_balance, 10 tests), T014 세후 수익률 계산기 (portfolio/after_tax.py, AfterTaxPortfolio/AfterTaxPosition + calculate_after_tax, 14 tests), T015 포트폴리오 대시보드 리포트 (reports/portfolio_report.py, 14 tests), T016 포트폴리오 대시보드 CLI (scripts/run_portfolio.py). PREREG-0009-asset-tracker 작성. 총 306 passed (회귀 0). feature/T013-portfolio-balance 브랜치."
     }
   ]
 }

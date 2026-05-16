@@ -6,6 +6,7 @@
     "active_prereg": "PREREG-0008-tax-tool",
     "active_prereg_2": "PREREG-0009-asset-tracker",
     "active_prereg_3": "PREREG-0010-rebalancing",
+    "active_prereg_4": "PREREG-0011-dart-monitor",
     "active_amendments": ["PREREG-0008-amendment-1", "PREREG-0008-amendment-2"]
   },
   "python": {
@@ -15,12 +16,12 @@
   },
   "test": {
     "framework": "pytest",
-    "pass": 344,
+    "pass": 387,
     "fail": 0,
     "skip": 0,
-    "total": 344,
+    "total": 387,
     "skip_tolerance": 3,
-    "measured_at": "2026-05-16 (Step 3)",
+    "measured_at": "2026-05-16 (Step A - DART Monitor)",
     "_comment": "Phase 3 첫 측정 (T001 Build Phase A). 기존 Phase 0~2 테스트 32개 (portfolio/risk/walkforward/ports_smoke). 회귀 차단용 floor. T001 완료 시 신규 테스트 10개+ 추가 예정 → 42+로 갱신",
     "test_dir": "tests/",
     "coverage_target": 80,
@@ -197,6 +198,13 @@
       "fail": 0,
       "skip": 0,
       "note": "Step 3 패시브 리밸런싱 완료. T017 리밸런싱 계산기 (portfolio/rebalance.py, TargetAllocation/MarketAllocation/RebalancePlan + calculate_rebalance, 세금 안분 포함, 20 tests), T018 리밸런싱 리포트 (reports/rebalance_report.py, 18 tests), T019 리밸런싱 CLI (scripts/run_rebalance.py). PREREG-0010-rebalancing 작성. 총 344 passed (회귀 0). feature/T017-rebalancing 브랜치."
+    },
+    {
+      "date": "2026-05-16",
+      "pass": 387,
+      "fail": 0,
+      "skip": 0,
+      "note": "Step A DART 공시 모니터링 완료. T020 DART API 어댑터 (adapters/dart_api.py, DisclosureRecord+_classify+fetch_disclosures+fetch_holdings_disclosures, 22 tests), T021 모니터 모듈 (monitoring/dart_monitor.py, MonitorResult+run_monitor, 8 tests), T022 텔레그램 알림 (notifications/telegram.py, format_disclosure_message+send_disclosure_alert, 13 tests), T023 CLI (scripts/run_dart_monitor.py). PREREG-0011-dart-monitor 작성. 총 387 passed (회귀 0). feature/T020-dart-monitor 브랜치."
     }
   ]
 }

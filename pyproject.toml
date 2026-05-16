@@ -26,6 +26,9 @@ dev = [
     "pytest-cov>=4.1",
     "ruff>=0.4",
 ]
+ui = [
+    "streamlit>=1.32",
+]
 
 [tool.setuptools.packages.find]
 include = ["sentinelq*"]

@@ -14,6 +14,21 @@ from sentinelq.portfolio.after_tax import AfterTaxPortfolio
 from sentinelq.portfolio.rebalance import RebalancePlan
 
 
+def _inject_secrets() -> None:
+    """Streamlit Cloud: st.secrets → os.environ 브릿지 (로컬 실행 시 no-op)."""
+    try:
+        import streamlit as st
+
+        for k, v in st.secrets.items():
+            if isinstance(v, str):
+                os.environ.setdefault(k, v)
+    except Exception:
+        pass
+
+
+_inject_secrets()
+
+
 def fmt_krw(amount: Decimal | int | float) -> str:
     """금액 → '1,234,567 원' 형식 (음수는 '-1,234,567 원')."""
     v = int(Decimal(str(amount)))

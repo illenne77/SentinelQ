@@ -2,6 +2,52 @@
 
 **Status**: Active — Phase 3 (KR Investor Tools) — re-activated 2026-05-11
 
+## 웹 앱 (Streamlit)
+
+```bash
+pip install -e ".[dev,ui]"
+streamlit run streamlit_app.py --server.address 0.0.0.0
+```
+
+| 페이지 | 기능 |
+|---|---|
+| Home | 환경변수 설정 현황 |
+| 💰 양도세 계산기 | 키움·미래에셋 CSV 업로드 → NTS 양식 + CSV 다운로드 |
+| 📈 포트폴리오 대시보드 | 보유 종목 입력 → 세전·세후 수익률 비교 |
+| ⚖️ 리밸런싱 계산기 | 목표 배분 설정 → 이탈도·세금 안분 계획 |
+| 🔔 DART 공시 | 종목코드 입력 → DART 신규 공시 조회 |
+
+### Streamlit Cloud 배포
+
+1. [share.streamlit.io](https://share.streamlit.io) 접속 → GitHub 계정 연동
+2. **Repository**: `illenne77/SentinelQ` / **Branch**: `main` / **Main file**: `streamlit_app.py`
+3. **Settings → Secrets**에 아래 항목 추가 (`.streamlit/secrets.toml.example` 참고):
+   ```toml
+   DART_API_KEY = "..."          # 필수 (DART 공시)
+   KIS_APP_KEY = "..."           # 선택 (포트폴리오 자동 조회)
+   KIS_APP_SECRET = "..."
+   KIS_ACCOUNT = "..."
+   TELEGRAM_BOT_TOKEN = "..."    # 선택 (알림)
+   TELEGRAM_CHAT_ID = "..."
+   ```
+4. **Deploy** 클릭
+
+### CLI 도구
+
+```bash
+# 양도세 신고서
+python scripts/run_tax_report.py --year 2025
+
+# 포트폴리오 세후 수익률
+python scripts/run_portfolio.py
+
+# 리밸런싱 계획
+python scripts/run_rebalance.py --target KR=30 US=70
+
+# DART 공시 모니터링
+python scripts/run_dart_monitor.py --days 7 --notify
+```
+
 KR 개인 투자자를 위한 자동화 도구 프로젝트.
 재출범 결정과 mandate는 [`docs/adr/ADR-0013-phase3-kr-investor-tools.md`](docs/adr/ADR-0013-phase3-kr-investor-tools.md) 참조.
 

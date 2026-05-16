@@ -8,7 +8,9 @@ Phase 0~2 (alpha trading, archived mandate):
 - ``clock.py``      — ClockPort
 
 Phase 3 (KR Investor Tools, ADR-0013 / PREREG-0008 mandate):
-- ``kis_history.py`` — KIS 거래내역·기간손익 조회 (T001)
+- ``kis_history.py``    — KIS 거래내역·기간손익 조회 (T001)
+- ``kiwoom_csv.py``     — 키움증권 HTS CSV 파서 (T009, amendment-2)
+- ``miraeasset_csv.py`` — 미래에셋증권 HTS CSV 파서 (T010, amendment-2)
 """
 
 from sentinelq.adapters.kis_history import (

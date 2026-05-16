@@ -90,6 +90,18 @@ if st.button("공시 조회 🔄", type="primary"):
             )
         except Exception as exc:
             st.error(f"조회 오류: {exc}")
+            if "timed out" in str(exc).lower() or "urlopen" in str(exc).lower():
+                st.info(
+                    "💡 **Streamlit Cloud에서는 DART API(opendart.fss.or.kr)에 접근이 제한됩니다.**\n\n"
+                    "로컬에서 실행하세요:\n"
+                    "```bash\n"
+                    "streamlit run streamlit_app.py\n"
+                    "```\n"
+                    "또는 CLI로 조회:\n"
+                    "```bash\n"
+                    "python scripts/run_dart_monitor.py --tickers 005930 000660 --days 7\n"
+                    "```"
+                )
             st.stop()
 
     # ── 결과 표시 ───────────────────────────────────────────

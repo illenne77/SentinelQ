@@ -632,19 +632,22 @@ def inquire_overseas_balance(
                 if ticker in seen:
                     continue
                 seen.add(ticker)
-                avg_krw = Decimal(str(row.get("pchs_avg_pric", "0") or "0"))
                 cost_krw = Decimal(str(row.get("pchs_amt", "0") or "0"))
                 evlu_krw = Decimal(str(row.get("ovrs_stck_evlu_amt", "0") or "0"))
                 pfls_krw = Decimal(str(row.get("evlu_pfls_amt", "0") or "0"))
-                cur_price_krw = Decimal(str(row.get("now_pric2", "0") or "0"))
+                # avg_price/current_price: KRW 금액을 수량으로 나눠 원화 단가 파생
+                # (pchs_avg_pric·now_pric2 는 USD 원시값 — 원화 표시에 부적합)
+                qty_d = Decimal(qty)
+                avg_price_krw = cost_krw / qty_d if cost_krw else Decimal("0")
+                cur_price_krw = evlu_krw / qty_d if evlu_krw else Decimal("0")
                 results.append(
                     HoldingRecord(
                         ticker=ticker,
                         name=str(row.get("ovrs_item_name", "")).strip(),
                         market="US",
                         quantity=qty,
-                        avg_price_krw=avg_krw,
-                        cost_basis_krw=cost_krw if cost_krw else avg_krw * qty,
+                        avg_price_krw=avg_price_krw,
+                        cost_basis_krw=cost_krw,
                         current_price_krw=cur_price_krw,
                         current_value_krw=evlu_krw,
                         unrealized_gain_krw=pfls_krw,

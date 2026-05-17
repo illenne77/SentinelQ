@@ -3,12 +3,15 @@
 **KR 개인 투자자를 위한 세금·공시 자동화 도구.** 해외주식 양도세 신고, 세후
 수익률 추적, DART 공시 모니터링을 한 곳에서 처리합니다.
 
+[![데모](https://img.shields.io/badge/▶_웹에서_바로_써보기-sentinelq.streamlit.app-FF4B4B)](https://sentinelq.streamlit.app/)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-421%20passed-brightgreen)
 
 > 매년 5월 해외주식 양도세를 증권사별로 따로 계산하고, 손익통산을 손으로
 > 맞추는 게 번거롭다면 — 이 도구가 그 작업을 자동화합니다.
+
+**설치 없이 웹에서 바로 사용:** https://sentinelq.streamlit.app/
 
 ---
 

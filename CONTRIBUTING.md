@@ -29,6 +29,10 @@ PR을 올리기 전에 위 세 명령이 모두 통과해야 합니다. CI(`/.gi
 현재 키움증권·미래에셋증권·한국투자증권(KIS) 거래내역만 지원합니다. NH투자증권,
 삼성증권 등 다른 증권사 파서가 절실합니다. 추가 방법은 다음과 같습니다.
 
+> 👉 **바로 시작하기**: 등록된 증권사 파서 작업은
+> [`good first issue` 이슈 목록](https://github.com/illenne77/SentinelQ/labels/good%20first%20issue)에서
+> 확인하세요. 원하는 증권사가 목록에 없으면 새 이슈로 제안해 주세요.
+
 ### 1. 기존 파서를 참고
 
 `sentinelq/adapters/kiwoom_csv.py`가 가장 좋은 템플릿입니다. 파서는 다음 한
